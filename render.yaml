@@ -1,0 +1,29 @@
+# One free web service that serves both the API and the built web app.
+# Deploy: Render dashboard → New → Blueprint → pick this repository.
+services:
+  - type: web
+    name: ours
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22
+      - key: MONGOMS_DISABLE_POSTINSTALL
+        value: "1"
+      - key: MONGODB_URI
+        sync: false # paste your MongoDB Atlas connection string
+      - key: CLIENT_URL
+        sync: false # e.g. https://ours.onrender.com
+      - key: SERVER_URL
+        sync: false # same value as CLIENT_URL for this single-service setup
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        sync: false # 64 hex characters: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"

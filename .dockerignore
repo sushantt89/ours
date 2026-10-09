@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+.git
+*.tar.gz
+*.log
+.DS_Store
+Dockerfile
+docker-compose.yml
+.dockerignore

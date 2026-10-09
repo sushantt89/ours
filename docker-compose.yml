@@ -1,0 +1,47 @@
+# Ours + its own MongoDB.
+#
+#   docker compose up --build -d      start (first run builds the image)
+#   docker compose logs -f app        watch the server log
+#   docker compose down               stop (your data stays in the "mongo-data" volume)
+#
+# Settings come from server/.env (secrets, Google, email, push, TURN…). The database
+# address and production mode are set here. Then open http://localhost:4000.
+#
+# Production mode needs JWT_ACCESS_SECRET, JWT_REFRESH_SECRET and ENCRYPTION_KEY in
+# server/.env. Set APP_URL to the address people use when it isn't localhost, e.g.
+#   APP_URL=https://ours.example.com docker compose up -d
+
+services:
+  app:
+    build: .
+    image: ours:latest
+    restart: unless-stopped
+    env_file:
+      - path: server/.env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGODB_URI: mongodb://mongo:27017/ours
+      CLIENT_URL: ${APP_URL:-http://localhost:4000}
+      SERVER_URL: ${APP_URL:-http://localhost:4000}
+    ports:
+      - "${APP_PORT:-4000}:4000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:8
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  mongo-data:
