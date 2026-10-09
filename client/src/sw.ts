@@ -44,20 +44,22 @@ registerRoute(
 /* ── Push notifications ─────────────────────────────────────────────── */
 
 self.addEventListener('push', (event) => {
-  let payload: { title?: string; body?: string; url?: string; tag?: string } = {};
+  let payload: { title?: string; body?: string; url?: string; tag?: string; image?: string } = {};
   try {
     payload = event.data?.json() ?? {};
   } catch {
     payload = { title: event.data?.text() };
   }
   event.waitUntil(
+    // `image` (a large picture, e.g. a nudge's GIF) is supported by Chromium but missing from TS's lib types.
     self.registration.showNotification(payload.title ?? 'Ours', {
       body: payload.body ?? '',
       tag: payload.tag,
       icon: '/icons/icon-192.png',
       badge: '/icons/badge-96.png',
+      image: payload.image,
       data: { url: payload.url ?? '/' },
-    }),
+    } as NotificationOptions),
   );
 });
 

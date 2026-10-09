@@ -6,6 +6,7 @@ export interface IncomingNudge {
   text: string;
   fromName: string;
   kind?: 'nudge' | 'status';
+  gif?: { url: string; width?: number; height?: number } | null;
 }
 
 interface RealtimeState {

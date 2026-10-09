@@ -171,6 +171,22 @@ describe('long-distance mode and scheduled nudges', () => {
   });
 });
 
+describe('nudges with a GIF', () => {
+  it('carries a GIPHY GIF to the partner and refuses other image hosts', async () => {
+    const { one, two } = await makeCouple();
+    const gif = { url: 'https://media2.giphy.com/media/abc/giphy.gif', preview: 'https://media2.giphy.com/media/abc/200w.gif', width: 200, height: 150 };
+    expect((await one.post('/api/nudges', { emoji: '🫂', text: 'Hug', gif })).status).toBe(201);
+    const [received] = (await two.get('/api/nudges')).body.recent;
+    expect(received).toMatchObject({ text: 'Hug', gif: { url: gif.url, width: 200 } });
+
+    const bad = await one.post('/api/nudges', { emoji: '🫂', text: 'Hug', gif: { url: 'https://evil.example.com/x.gif' } });
+    expect(bad.status).toBe(400);
+    // Plain nudges still work, with no GIF attached.
+    await one.post('/api/nudges', { emoji: '😘', text: 'Kiss' });
+    expect((await two.get('/api/nudges')).body.recent[0].gif?.url).toBeUndefined();
+  });
+});
+
 describe('memory map', () => {
   const upload = (token: string, fields: Record<string, string>, file = PNG, name = 'a.png') => {
     const req = request(app).post('/api/memories').set('Authorization', `Bearer ${token}`);

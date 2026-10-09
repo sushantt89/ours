@@ -13,6 +13,7 @@ export interface PushPayload {
   url: string;
   tag?: string;
   emoji?: string;
+  image?: string;
 }
 
 /** Sends a web push to every device a user has subscribed. Expired subscriptions are pruned. */

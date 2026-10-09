@@ -9,3 +9,4 @@ export * from './EmojiPicker';
 export * from './Lightbox';
 export * from './PhotoPicker';
 export * from './PlaceInput';
+export * from './GifResults';

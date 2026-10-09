@@ -9,6 +9,7 @@ const nudgeSchema = new Schema(
     kind: { type: String, enum: ['nudge', 'status'], default: 'nudge' },
     emoji: { type: String, required: true, maxlength: 16 },
     text: { type: String, required: true, maxlength: 60 },
+    gif: { url: String, preview: String, width: Number, height: Number },
     seenAt: Date,
     deliverAt: Date, // scheduled "good morning" style nudges, timed to the partner's clock
     deliveredAt: Date,

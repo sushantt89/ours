@@ -13,18 +13,19 @@ export const ACCENTS: { id: Accent; label: string; swatch: string }[] = [
 
 export const REACTIONS = ['❤️', '😘', '😂', '🥺', '🔥', '💋', '🫶', '🤗'];
 
+/** Built-in nudges. `gif` is the GIPHY search used when a nudge is sent with a GIF. */
 export const NUDGES = [
-  { emoji: '❤️', text: 'Thinking of you' },
-  { emoji: '😘', text: 'Kiss' },
-  { emoji: '🫂', text: 'Hug' },
-  { emoji: '☕', text: 'Coffee?' },
-  { emoji: '🥺', text: 'Miss you' },
-  { emoji: '😂', text: "You're annoying" },
-  { emoji: '💋', text: 'Kiss me' },
-  { emoji: '🫶', text: 'Love you' },
-  { emoji: '🔥', text: 'Come here' },
-  { emoji: '🌙', text: 'Good night' },
-  { emoji: '☀️', text: 'Good morning' },
+  { emoji: '❤️', text: 'Thinking of you', gif: 'thinking of you love' },
+  { emoji: '😘', text: 'Kiss', gif: 'kiss cute' },
+  { emoji: '🫂', text: 'Hug', gif: 'hug cute' },
+  { emoji: '☕', text: 'Coffee?', gif: 'coffee cute' },
+  { emoji: '🥺', text: 'Miss you', gif: 'miss you' },
+  { emoji: '😂', text: "You're annoying", gif: 'annoying funny' },
+  { emoji: '💋', text: 'Kiss me', gif: 'kiss me' },
+  { emoji: '🫶', text: 'Love you', gif: 'i love you' },
+  { emoji: '🔥', text: 'Come here', gif: 'come here cuddle' },
+  { emoji: '🌙', text: 'Good night', gif: 'good night cute' },
+  { emoji: '☀️', text: 'Good morning', gif: 'good morning cute' },
 ];
 
 export const STATUSES = [

@@ -155,14 +155,7 @@ const sendSchema = z
       .optional(),
     text: z.string().trim().max(4000).default(''),
     mediaId: v.objectId.optional(),
-    gif: z
-      .object({
-        url: z.url().max(600).refine((u) => /^https:\/\/[a-z0-9-]+\.giphy\.com\//.test(u), 'Unsupported GIF source'),
-        preview: z.url().max(600).optional(),
-        width: z.number().positive().max(4000).optional(),
-        height: z.number().positive().max(4000).optional(),
-      })
-      .optional(),
+    gif: v.gif.optional(),
     replyTo: v.objectId.optional(),
     clientId: z.string().max(64).optional(),
   })

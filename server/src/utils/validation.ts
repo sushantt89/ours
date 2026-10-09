@@ -16,3 +16,12 @@ export const password = z
 export const email = z.email('Enter a valid email address').max(254).transform((e) => e.toLowerCase().trim());
 export const isoDate = z.iso.datetime({ offset: true }).transform((s) => new Date(s));
 export const mediaIds = z.array(objectId).max(12);
+
+const giphyUrl = z.url().max(600).refine((u) => /^https:\/\/[a-z0-9-]+\.giphy\.com\//.test(u), 'Unsupported GIF source');
+/** A GIF picked from the GIPHY search proxy. Only GIPHY's own media hosts are accepted. */
+export const gif = z.object({
+  url: giphyUrl,
+  preview: giphyUrl.optional(),
+  width: z.number().positive().max(4000).optional(),
+  height: z.number().positive().max(4000).optional(),
+});

@@ -11,6 +11,7 @@ import * as v from '../utils/validation';
 
 const router = Router();
 const nudgeSchema = z.object({ emoji: v.emoji, text: z.string().trim().min(1).max(60) });
+const sendSchema = nudgeSchema.extend({ gif: v.gif.optional(), deliverAt: v.isoDate.optional() });
 
 /** Delivers a nudge now: the animation, the notification, and the activity streak. */
 export async function deliverNudge(nudge: InstanceType<typeof Nudge>, fromName: string, timezone: string) {
@@ -24,6 +25,7 @@ export async function deliverNudge(nudge: InstanceType<typeof Nudge>, fromName: 
     title: nudge.text,
     body: `From ${fromName}`,
     url: '/nudges',
+    image: nudge.gif?.url ?? undefined,
     timezone,
   });
 }
@@ -40,7 +42,7 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', nudgeLimiter, async (req, res) => {
-  const body = nudgeSchema.extend({ deliverAt: v.isoDate.optional() }).parse(req.body);
+  const body = sendSchema.parse(req.body);
   if (!req.partnerId) throw badRequest("Your partner hasn't joined yet");
   if (body.deliverAt) {
     const ahead = body.deliverAt.getTime() - Date.now();

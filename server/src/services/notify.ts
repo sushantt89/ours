@@ -53,6 +53,8 @@ export interface NotifyInput {
   body?: string;
   emoji?: string;
   url?: string;
+  /** A picture shown in the push notification where the platform supports it (Android, Windows). */
+  image?: string;
   /** When set, the same key is never delivered twice to the same person. */
   dedupeKey?: string;
   /** Skip the in-app feed entry (used for chat, which has its own unread badge). */
@@ -111,6 +113,7 @@ export async function notify(input: NotifyInput): Promise<boolean> {
       body: doc.body,
       url: doc.url,
       tag: input.dedupeKey ?? input.type,
+      image: input.image,
     });
   }
   return true;

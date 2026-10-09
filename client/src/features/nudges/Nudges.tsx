@@ -6,11 +6,22 @@ import { del, errorMessage, get, post } from '@/lib/api';
 import { NUDGES } from '@/lib/constants';
 import { timeAgo } from '@/lib/dates';
 import { cn } from '@/lib/cn';
-import type { Couple, Nudge } from '@/lib/types';
+import type { Couple, Nudge, NudgeGif } from '@/lib/types';
 import { useAuth, useCouple, useMe, usePartner } from '@/store/auth';
 import { confirm, toast } from '@/store/ui';
-import { Button, Card, EmojiButton, EmptyState, Input, SectionTitle, Sheet, SkeletonList } from '@/components/ui';
+import { Button, Card, EmojiButton, EmptyState, GifResults, Input, SectionTitle, Segmented, Sheet, SkeletonList, randomGif, type Gif } from '@/components/ui';
 import { Page } from '@/components/layout/AppShell';
+
+type GifMode = 'surprise' | 'choose' | 'off';
+const GIF_MODE_KEY = 'ours:nudge-gif-mode';
+function readGifMode(): GifMode {
+  try {
+    const saved = localStorage.getItem(GIF_MODE_KEY);
+    return saved === 'choose' || saved === 'off' ? saved : 'surprise';
+  } catch {
+    return 'surprise';
+  }
+}
 
 /** Sends a nudge and reports back for the button's little animation. */
 export function useSendNudge() {
@@ -18,12 +29,16 @@ export function useSendNudge() {
   const [sending, setSending] = useState<string | null>(null);
   const [sent, setSent] = useState<{ key: number; text: string } | null>(null);
 
-  async function send(emoji: string, text: string) {
+  /** `gif` can be a GIF already chosen, or a search phrase to surprise them with a random one. */
+  async function send(emoji: string, text: string, gif?: Gif | string) {
     if (!partner) return toast.error("Your partner hasn't joined yet");
     setSending(text);
     navigator.vibrate?.(25);
     try {
-      await post('/nudges', { emoji, text });
+      // A GIF that can't be found (no results, GIPHY down) never blocks the nudge itself.
+      const picked = typeof gif === 'string' ? await randomGif(gif).catch(() => null) : gif;
+      const attached: NudgeGif | undefined = picked ? { url: picked.url, preview: picked.preview, width: picked.width, height: picked.height } : undefined;
+      await post('/nudges', { emoji, text, gif: attached });
       setSent({ key: Date.now(), text });
       toast.success(`Sent to ${partner.name}`, emoji);
     } catch (err) {
@@ -82,6 +97,23 @@ export default function Nudges() {
   const partner = usePartner();
   const { send, sending, sent } = useSendNudge();
   const { data, isLoading } = useQuery({ queryKey: ['nudges'], queryFn: () => get<{ recent: Nudge[] }>('/nudges') });
+  const gifsEnabled = useAuth((s) => s.config?.gifsEnabled ?? false);
+  const [gifMode, setGifModeState] = useState<GifMode>(readGifMode);
+  const [choosing, setChoosing] = useState<{ emoji: string; text: string; query: string } | null>(null);
+  const mode: GifMode = gifsEnabled ? gifMode : 'off';
+  const setGifMode = (m: GifMode) => {
+    setGifModeState(m);
+    try {
+      localStorage.setItem(GIF_MODE_KEY, m);
+    } catch {
+      /* storage unavailable: keep it for this visit only */
+    }
+  };
+  /** One tap: plain, with a surprise GIF, or open the picker first. */
+  const tap = (emoji: string, text: string, query: string) => {
+    if (mode === 'choose') setChoosing({ emoji, text, query });
+    else void send(emoji, text, mode === 'surprise' ? query : undefined);
+  };
   const [adding, setAdding] = useState(false);
   const [emoji, setEmoji] = useState('🍟');
   const [text, setText] = useState('');
@@ -119,9 +151,31 @@ export default function Nudges() {
         <EmptyState emoji="💕" title="Almost there" body="Nudges switch on as soon as your partner joins your space." />
       ) : (
         <>
+          {gifsEnabled && (
+            <div className="mb-4 flex items-center gap-3">
+              <span className="text-sm font-medium text-muted">GIF</span>
+              <Segmented
+                label="Send nudges with a GIF"
+                value={gifMode}
+                onChange={setGifMode}
+                options={[
+                  { value: 'surprise', label: '🎲 Surprise' },
+                  { value: 'choose', label: '👆 Choose' },
+                  { value: 'off', label: 'Off' },
+                ]}
+              />
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
             {NUDGES.map((n) => (
-              <NudgeButton key={n.text} {...n} busy={sending === n.text} justSent={sent?.text === n.text ? sent.key : null} onSend={() => send(n.emoji, n.text)} />
+              <NudgeButton
+                key={n.text}
+                emoji={n.emoji}
+                text={n.text}
+                busy={sending === n.text}
+                justSent={sent?.text === n.text ? sent.key : null}
+                onSend={() => tap(n.emoji, n.text, n.gif)}
+              />
             ))}
           </div>
 
@@ -135,7 +189,7 @@ export default function Nudges() {
                   text={n.text}
                   busy={sending === n.text}
                   justSent={sent?.text === n.text ? sent.key : null}
-                  onSend={() => send(n.emoji, n.text)}
+                  onSend={() => tap(n.emoji, n.text, n.text)}
                   onRemove={() => removeCustom(n.id, n.text)}
                 />
               ))}
@@ -161,9 +215,13 @@ export default function Nudges() {
                   const mine = n.fromId === me.id;
                   return (
                     <div key={n.id} className="flex items-center gap-3 px-4 py-3">
-                      <span className="text-2xl" aria-hidden>
-                        {n.emoji}
-                      </span>
+                      {n.gif?.url ? (
+                        <img src={n.gif.preview ?? n.gif.url} alt="" loading="lazy" className="size-10 shrink-0 rounded-xl bg-surface-2 object-cover" />
+                      ) : (
+                        <span className="grid size-10 shrink-0 place-items-center text-2xl" aria-hidden>
+                          {n.emoji}
+                        </span>
+                      )}
                       <p className="min-w-0 flex-1 truncate">
                         <span className="font-medium">{n.text}</span>
                         <span className={cn('ml-2 text-sm', mine ? 'text-muted' : 'text-accent')}>{mine ? 'from you' : `from ${partner.name}`}</span>
@@ -179,6 +237,37 @@ export default function Nudges() {
           </div>
         </>
       )}
+
+      <Sheet open={Boolean(choosing)} onClose={() => setChoosing(null)} title={choosing ? `${choosing.emoji} ${choosing.text}` : ''}>
+        {choosing && (
+          <>
+            <p className="mb-3 text-sm text-muted">Pick the GIF {partner?.name ?? 'they'} will see, or search for another.</p>
+            <GifResults
+              key={choosing.text}
+              type="gifs"
+              initialQuery={choosing.query}
+              className="max-h-[50dvh]"
+              onPick={(gif) => {
+                const { emoji, text } = choosing;
+                setChoosing(null);
+                void send(emoji, text, gif);
+              }}
+            />
+            <Button
+              variant="ghost"
+              block
+              className="mt-2"
+              onClick={() => {
+                const { emoji, text } = choosing;
+                setChoosing(null);
+                void send(emoji, text);
+              }}
+            >
+              Send without a GIF
+            </Button>
+          </>
+        )}
+      </Sheet>
 
       <Sheet open={adding} onClose={() => setAdding(false)} title="Make your own nudge">
         <form onSubmit={addCustom} className="space-y-4">

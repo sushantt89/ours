@@ -14,7 +14,7 @@ export function NudgeOverlay() {
   useEffect(() => {
     if (!nudge) return;
     navigator.vibrate?.([70, 50, 70]);
-    const timer = setTimeout(clear, 5200);
+    const timer = setTimeout(clear, nudge.gif?.url ? 8000 : 5200);
     return () => clearTimeout(timer);
   }, [nudge, clear]);
 
@@ -64,14 +64,26 @@ export function NudgeOverlay() {
             className="relative w-full max-w-xs rounded-[32px] bg-surface p-7 text-center shadow-float"
             onClick={(e) => e.stopPropagation()}
           >
-            <motion.div
-              className="text-7xl"
-              animate={{ rotate: [0, -12, 12, -8, 8, 0], scale: [1, 1.15, 1] }}
-              transition={{ duration: 0.9, delay: 0.15 }}
-              aria-hidden
-            >
-              {nudge.emoji}
-            </motion.div>
+            {nudge.gif?.url ? (
+              <motion.img
+                src={nudge.gif.url}
+                alt=""
+                className="mx-auto max-h-56 w-full rounded-3xl bg-surface-2 object-contain"
+                style={nudge.gif.width && nudge.gif.height ? { aspectRatio: `${nudge.gif.width} / ${nudge.gif.height}` } : undefined}
+                initial={{ scale: 0.85, rotate: -3 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', damping: 10, stiffness: 180, delay: 0.1 }}
+              />
+            ) : (
+              <motion.div
+                className="text-7xl"
+                animate={{ rotate: [0, -12, 12, -8, 8, 0], scale: [1, 1.15, 1] }}
+                transition={{ duration: 0.9, delay: 0.15 }}
+                aria-hidden
+              >
+                {nudge.emoji}
+              </motion.div>
+            )}
             <p className="mt-4 text-sm font-medium uppercase tracking-[0.12em] text-muted">{nudge.fromName}</p>
             <p className="mt-1 font-display text-2xl leading-snug">{nudge.text}</p>
             <div className="mt-6 flex gap-2">

@@ -194,7 +194,15 @@ export interface Nudge {
   kind: 'nudge' | 'status';
   emoji: string;
   text: string;
+  gif?: NudgeGif | null;
   createdAt: string;
+}
+
+export interface NudgeGif {
+  url: string;
+  preview?: string;
+  width?: number;
+  height?: number;
 }
 
 export interface Memory {

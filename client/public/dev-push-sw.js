@@ -18,6 +18,7 @@ self.addEventListener('push', (event) => {
       tag: payload.tag,
       icon: '/icons/icon-192.png',
       badge: '/icons/badge-96.png',
+      image: payload.image,
       data: { url: payload.url || '/' },
     }),
   );
