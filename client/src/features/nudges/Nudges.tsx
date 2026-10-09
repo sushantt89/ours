@@ -11,7 +11,6 @@ import { useAuth, useCouple, useMe, usePartner } from '@/store/auth';
 import { confirm, toast } from '@/store/ui';
 import { Button, Card, EmojiButton, EmptyState, Input, SectionTitle, Sheet, SkeletonList } from '@/components/ui';
 import { Page } from '@/components/layout/AppShell';
-import { BackButton } from '@/components/layout/BackButton';
 
 /** Sends a nudge and reports back for the button's little animation. */
 export function useSendNudge() {
@@ -115,7 +114,7 @@ export default function Nudges() {
   }
 
   return (
-    <Page title="Nudges" subtitle={partner ? `One tap, and ${partner.name} knows` : 'One tap to say it'} back={<BackButton />}>
+    <Page title="Nudges" subtitle={partner ? `One tap, and ${partner.name} knows` : 'One tap to say it'}>
       {!partner ? (
         <EmptyState emoji="💕" title="Almost there" body="Nudges switch on as soon as your partner joins your space." />
       ) : (

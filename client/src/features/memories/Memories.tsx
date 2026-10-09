@@ -9,6 +9,7 @@ import type { Album, Memory } from '@/lib/types';
 import { confirm, toast } from '@/store/ui';
 import { Button, Chip, EmojiButton, EmptyState, ErrorState, IconButton, Input, Segmented, Select, Sheet, Skeleton, Spinner } from '@/components/ui';
 import { Page } from '@/components/layout/AppShell';
+import { BackButton } from '@/components/layout/BackButton';
 import { useAlbums, useFacets, useMemories, useOnThisDay, type MemoryFilters } from './api';
 import { MemoryViewer } from './MemoryViewer';
 import { UploadSheet } from './UploadSheet';
@@ -175,6 +176,7 @@ export default function Memories() {
       title={activeAlbum ? `${activeAlbum.emoji} ${activeAlbum.name}` : 'Memories'}
       subtitle={facets.data ? `${facets.data.total.toLocaleString()} ${facets.data.total === 1 ? 'memory' : 'memories'} together` : undefined}
       wide
+      back={<BackButton />}
       actions={
         <>
           <IconButton label="Search memories" active={searching} onClick={() => setSearching((s) => !s)}>

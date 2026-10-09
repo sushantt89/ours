@@ -13,9 +13,10 @@ export function InviteCard() {
   const me = useMe();
   const setSession = useAuth((s) => s.setSession);
   const [busy, setBusy] = useState(false);
-  if (couple.status !== 'pending' || !couple.inviteCode || !couple.inviteLink) return null;
+  if (couple.status !== 'pending' || !couple.inviteCode) return null;
 
-  const link = couple.inviteLink;
+  // Built from the address this page is open on, so the link is right on any domain.
+  const link = `${window.location.origin}/join/${couple.inviteCode}`;
   const shareText = `${me.name} invited you to your private space on Ours. Join with code ${couple.inviteCode}`;
 
   async function share() {

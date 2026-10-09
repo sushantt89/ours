@@ -75,3 +75,10 @@ export const env = {
   gifsEnabled: Boolean(raw.GIPHY_API_KEY),
   turnEnabled: Boolean((raw.METERED_DOMAIN && raw.METERED_API_KEY) || raw.TURN_URLS),
 };
+
+if (isProd && process.env.RENDER && /localhost|127\.0\.0\.1/.test(env.CLIENT_URL + env.SERVER_URL)) {
+  console.warn(
+    `[env] CLIENT_URL/SERVER_URL point at localhost (${env.CLIENT_URL}, ${env.SERVER_URL}). ` +
+      'Email links and the Google Drive connection will send people to the wrong address. Set both to your public URL.',
+  );
+}

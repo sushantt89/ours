@@ -43,7 +43,7 @@ export interface NavGroup {
 export const PRIMARY: NavItem[] = [
   { to: '/', label: 'Home', icon: Home, emoji: '🏠' },
   { to: '/chat', label: 'Chat', icon: MessageCircleHeart, emoji: '💬' },
-  { to: '/memories', label: 'Memories', icon: Images, emoji: '📸' },
+  { to: '/nudges', label: 'Nudges', icon: HandHeart, emoji: '💕' },
   { to: '/calendar', label: 'Calendar', icon: CalendarHeart, emoji: '📅' },
 ];
 
@@ -54,7 +54,6 @@ export const GROUPS: NavGroup[] = [
     label: 'Every day',
     items: [
       { to: '/notes', label: 'Love notes', icon: Mail, emoji: '💌', hint: 'Letters, surprises and "open when…"' },
-      { to: '/nudges', label: 'Nudges', icon: HandHeart, emoji: '💕', hint: 'A tap to say "thinking of you"' },
       { to: '/question', label: 'Daily question', icon: MessageCircleQuestion, emoji: '💭', hint: 'Answer, then reveal together' },
       { to: '/music', label: 'Song of the day', icon: Music, emoji: '🎵', hint: 'One song each, every day' },
       { to: '/journal', label: 'Our journal', icon: NotebookPen, emoji: '📔', hint: 'A page a day, written by both' },
@@ -74,6 +73,7 @@ export const GROUPS: NavGroup[] = [
   {
     label: 'Us',
     items: [
+      { to: '/memories', label: 'Memories', icon: Images, emoji: '📸', hint: 'Photos, videos and albums' },
       { to: '/story', label: 'Our story', icon: BookHeart, emoji: '❤️', hint: 'Counter, milestones and year in review' },
       { to: '/map', label: 'Memory map', icon: MapPinned, emoji: '🗺️', hint: 'Everywhere you have been together' },
       { to: '/games', label: 'Games', icon: Dices, emoji: '🎲', hint: 'This or that, who is more likely, quizzes' },
