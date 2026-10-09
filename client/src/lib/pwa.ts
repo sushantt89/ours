@@ -43,20 +43,33 @@ export function registerServiceWorker() {
   const start = async () => {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-      // A new version has downloaded: offer to switch to it rather than reloading under the user.
+      const activate = (worker: ServiceWorker) => worker.postMessage({ type: 'skip-waiting' });
+
+      // A version that finished downloading last time: switch now, while the app is just opening.
+      if (registration.waiting && navigator.serviceWorker.controller) activate(registration.waiting);
+
+      // A new version downloaded while the app is open: offer it, and switch by itself the next
+      // time the app goes into the background, so nobody has to remember to tap "Update".
       registration.addEventListener('updatefound', () => {
         const worker = registration.installing;
         worker?.addEventListener('statechange', () => {
-          if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-            toast.info('A new version is ready', '✨', {
-              label: 'Update',
-              onClick: () => {
-                worker.postMessage({ type: 'skip-waiting' });
-              },
-            });
-          }
+          if (worker.state !== 'installed' || !navigator.serviceWorker.controller) return;
+          if (document.visibilityState === 'hidden') return activate(worker);
+          toast.info('A new version is ready', '✨', { label: 'Update', onClick: () => activate(worker) });
+          const onHide = () => {
+            if (document.visibilityState !== 'hidden') return;
+            document.removeEventListener('visibilitychange', onHide);
+            activate(worker);
+          };
+          document.addEventListener('visibilitychange', onHide);
         });
       });
+
+      // Installed apps stay open for days: look for a new version whenever the app comes back.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') registration.update().catch(() => undefined);
+      });
+
       // Only reload for an update; the very first install takes control silently.
       const hadController = Boolean(navigator.serviceWorker.controller);
       let reloaded = false;

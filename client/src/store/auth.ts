@@ -58,6 +58,21 @@ async function wipeLocalData() {
   }
 }
 
+/**
+ * The server's feature switches (GIFs, Google, push…). A free host can take a minute to wake
+ * up, so a failed fetch is retried with backoff instead of leaving features hidden all session.
+ */
+async function loadConfig(apply: (config: AppConfig) => void) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      apply(await get<AppConfig>('/auth/config'));
+      return;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, Math.min(30_000, 2_000 * 2 ** attempt)));
+    }
+  }
+}
+
 export const useAuth = create<AuthState>((set, getState) => ({
   status: 'loading',
   user: null,
@@ -67,9 +82,7 @@ export const useAuth = create<AuthState>((set, getState) => ({
   offlineSession: false,
 
   async bootstrap() {
-    get<AppConfig>('/auth/config')
-      .then((config) => set({ config }))
-      .catch(() => undefined);
+    void loadConfig((config) => set({ config }));
     try {
       const ok = await refreshSession();
       if (!ok) set({ status: 'guest' });
