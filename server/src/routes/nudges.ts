@@ -30,11 +30,18 @@ export async function deliverNudge(nudge: InstanceType<typeof Nudge>, fromName: 
   });
 }
 
-const delivered = { $or: [{ deliverAt: null }, { deliveredAt: { $ne: null } }] };
+/** The nudge history only shows the last day; older nudges drop off (they still count in the year-in-review). */
+export const HISTORY_MS = 24 * 3600 * 1000;
+const deliveredSince = (since: Date) => ({
+  $or: [
+    { deliverAt: null, createdAt: { $gte: since } },
+    { deliveredAt: { $gte: since } },
+  ],
+});
 
 router.get('/', async (req, res) => {
   const [recent, scheduled] = await Promise.all([
-    Nudge.find({ coupleId: req.couple._id, ...delivered }).sort({ createdAt: -1 }).limit(40),
+    Nudge.find({ coupleId: req.couple._id, ...deliveredSince(new Date(Date.now() - HISTORY_MS)) }).sort({ createdAt: -1 }).limit(40),
     // Only the sender knows about a nudge that hasn't gone out yet.
     Nudge.find({ coupleId: req.couple._id, fromId: req.user._id, deliverAt: { $ne: null }, deliveredAt: null }).sort({ deliverAt: 1 }),
   ]);

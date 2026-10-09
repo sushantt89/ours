@@ -187,6 +187,20 @@ describe('nudges with a GIF', () => {
   });
 });
 
+describe('nudge history', () => {
+  it('only shows nudges from the last 24 hours', async () => {
+    const { one, two } = await makeCouple();
+    await one.post('/api/nudges', { emoji: '🫂', text: 'Hug' });
+    await one.post('/api/nudges', { emoji: '😘', text: 'Kiss' });
+    // Make the hug 25 hours old.
+    await Nudge.collection.updateOne({ text: 'Hug' }, { $set: { createdAt: new Date(Date.now() - 25 * 3600_000) } });
+    const recent = (await two.get('/api/nudges')).body.recent;
+    expect(recent.map((n: any) => n.text)).toEqual(['Kiss']);
+    // Older nudges are hidden, not lost: they still count in the year-in-review.
+    expect(await Nudge.countDocuments({ text: 'Hug' })).toBe(1);
+  });
+});
+
 describe('memory map', () => {
   const upload = (token: string, fields: Record<string, string>, file = PNG, name = 'a.png') => {
     const req = request(app).post('/api/memories').set('Authorization', `Bearer ${token}`);

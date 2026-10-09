@@ -13,8 +13,10 @@ export function NudgeOverlay() {
 
   useEffect(() => {
     if (!nudge) return;
+    if (nudge.replay) return; // opened from the history: stays until closed
     navigator.vibrate?.([70, 50, 70]);
-    const timer = setTimeout(clear, nudge.gif?.url ? 8000 : 5200);
+    // GIFs get time to play through a few times before the pop-up closes itself.
+    const timer = setTimeout(clear, nudge.gif?.url ? 20_000 : 5200);
     return () => clearTimeout(timer);
   }, [nudge, clear]);
 
@@ -88,17 +90,19 @@ export function NudgeOverlay() {
             <p className="mt-1 font-display text-2xl leading-snug">{nudge.text}</p>
             <div className="mt-6 flex gap-2">
               <Button variant="outline" block onClick={clear}>
-                Aww
+                {nudge.mine ? 'Close' : 'Aww'}
               </Button>
-              <Button
-                block
-                onClick={() => {
-                  clear();
-                  navigate('/nudges');
-                }}
-              >
-                Send one back
-              </Button>
+              {!nudge.mine && (
+                <Button
+                  block
+                  onClick={() => {
+                    clear();
+                    navigate('/nudges');
+                  }}
+                >
+                  Send one back
+                </Button>
+              )}
             </div>
           </motion.div>
         </motion.div>

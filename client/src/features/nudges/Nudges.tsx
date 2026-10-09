@@ -8,6 +8,7 @@ import { timeAgo } from '@/lib/dates';
 import { cn } from '@/lib/cn';
 import type { Couple, Nudge, NudgeGif } from '@/lib/types';
 import { useAuth, useCouple, useMe, usePartner } from '@/store/auth';
+import { useRealtime } from '@/store/realtime';
 import { confirm, toast } from '@/store/ui';
 import { Button, Card, EmojiButton, EmptyState, GifResults, Input, SectionTitle, Segmented, Sheet, SkeletonList, randomGif, type Gif } from '@/components/ui';
 import { Page } from '@/components/layout/AppShell';
@@ -204,17 +205,33 @@ export default function Nudges() {
           </div>
 
           <div className="mt-8">
-            <SectionTitle>Recent</SectionTitle>
+            <SectionTitle>Last 24 hours</SectionTitle>
             {isLoading ? (
               <SkeletonList rows={3} className="h-14" />
             ) : !data?.recent.length ? (
-              <p className="px-1 text-muted">No nudges yet. Go on, send the first one.</p>
+              <p className="px-1 text-muted">No nudges in the last day. Go on, send one.</p>
             ) : (
               <Card className="divide-y divide-line/70">
                 {data.recent.slice(0, 15).map((n) => {
                   const mine = n.fromId === me.id;
                   return (
-                    <div key={n.id} className="flex items-center gap-3 px-4 py-3">
+                    <button
+                      key={n.id}
+                      type="button"
+                      onClick={() =>
+                        useRealtime.getState().showNudge({
+                          emoji: n.emoji,
+                          text: n.text,
+                          gif: n.gif?.url ? n.gif : null,
+                          kind: n.kind,
+                          fromName: mine ? 'You' : partner.name,
+                          replay: true,
+                          mine,
+                        })
+                      }
+                      aria-label={`Open "${n.text}" ${mine ? 'from you' : `from ${partner.name}`}`}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left transition first:rounded-t-[inherit] last:rounded-b-[inherit] hover:bg-surface-2 active:bg-surface-2"
+                    >
                       {n.gif?.url ? (
                         <img src={n.gif.preview ?? n.gif.url} alt="" loading="lazy" className="size-10 shrink-0 rounded-xl bg-surface-2 object-cover" />
                       ) : (
@@ -222,14 +239,14 @@ export default function Nudges() {
                           {n.emoji}
                         </span>
                       )}
-                      <p className="min-w-0 flex-1 truncate">
+                      <span className="min-w-0 flex-1 truncate">
                         <span className="font-medium">{n.text}</span>
                         <span className={cn('ml-2 text-sm', mine ? 'text-muted' : 'text-accent')}>{mine ? 'from you' : `from ${partner.name}`}</span>
-                      </p>
+                      </span>
                       <time className="shrink-0 text-xs text-muted" dateTime={n.createdAt}>
                         {timeAgo(n.createdAt)}
                       </time>
-                    </div>
+                    </button>
                   );
                 })}
               </Card>

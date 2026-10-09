@@ -7,6 +7,10 @@ export interface IncomingNudge {
   fromName: string;
   kind?: 'nudge' | 'status';
   gif?: { url: string; width?: number; height?: number } | null;
+  /** Reopened from the history: no buzz, and it stays until closed. */
+  replay?: boolean;
+  /** One you sent yourself (only when replaying). */
+  mine?: boolean;
 }
 
 interface RealtimeState {
