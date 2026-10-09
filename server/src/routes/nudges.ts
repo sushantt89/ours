@@ -24,7 +24,7 @@ export async function deliverNudge(nudge: InstanceType<typeof Nudge>, fromName: 
     emoji: nudge.emoji,
     title: nudge.text,
     body: `From ${fromName}`,
-    url: '/nudges',
+    url: `/nudges?open=${nudge._id}`,
     image: nudge.gif?.url ?? undefined,
     timezone,
   });

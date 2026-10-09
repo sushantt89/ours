@@ -1,24 +1,67 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { useNavigate } from 'react-router-dom';
-import { useRealtime } from '@/store/realtime';
-import { Button } from '@/components/ui';
+import { errorMessage, post } from '@/lib/api';
+import { NUDGES } from '@/lib/constants';
+import { queryClient } from '@/lib/queryClient';
+import { useAuth } from '@/store/auth';
+import { useRealtime, type IncomingNudge } from '@/store/realtime';
+import { toast } from '@/store/ui';
+import { Button, randomGif } from '@/components/ui';
+
+/** Sends a nudge straight from the pop-up. A GIF comes along when the original had one. */
+async function reply(emoji: string, text: string, withGif: boolean) {
+  const gifsEnabled = useAuth.getState().config?.gifsEnabled;
+  const search = NUDGES.find((n) => n.text === text)?.gif ?? text;
+  const picked = withGif && gifsEnabled ? await randomGif(search).catch(() => null) : null;
+  await post('/nudges', {
+    emoji,
+    text,
+    gif: picked ? { url: picked.url, preview: picked.preview, width: picked.width, height: picked.height } : undefined,
+  });
+  void queryClient.invalidateQueries({ queryKey: ['nudges'] });
+}
 
 /** The little celebration that plays when your partner nudges you. */
 export function NudgeOverlay() {
   const nudge = useRealtime((s) => s.nudge);
   const clear = useRealtime((s) => s.clearNudge);
-  const navigate = useNavigate();
+  const partnerName = useAuth((s) => s.partner?.name ?? 'your partner');
+  const [sending, setSending] = useState<'aww' | 'back' | null>(null);
 
   useEffect(() => {
     if (!nudge) return;
-    if (nudge.replay) return; // opened from the history: stays until closed
-    navigator.vibrate?.([70, 50, 70]);
-    // GIFs get time to play through a few times before the pop-up closes itself.
-    const timer = setTimeout(clear, nudge.gif?.url ? 20_000 : 5200);
-    return () => clearTimeout(timer);
+    if (nudge.replay) return; // opened from the history or a notification: stays until closed
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // Only start the countdown once someone can actually see it: a nudge that arrives while the
+    // app is in the background waits until you come back.
+    const start = () => {
+      if (timer || document.visibilityState !== 'visible') return;
+      navigator.vibrate?.([70, 50, 70]);
+      // GIFs get time to play through a few times before the pop-up closes itself.
+      timer = setTimeout(clear, nudge.gif?.url ? 20_000 : 5200);
+    };
+    start();
+    document.addEventListener('visibilitychange', start);
+    return () => {
+      document.removeEventListener('visibilitychange', start);
+      clearTimeout(timer);
+    };
   }, [nudge, clear]);
+
+  async function respond(kind: 'aww' | 'back', current: IncomingNudge) {
+    setSending(kind);
+    try {
+      if (kind === 'aww') await reply('🥰', 'Aww', false);
+      else await reply(current.emoji, current.text, Boolean(current.gif?.url));
+      clear();
+      toast.success(kind === 'aww' ? `Sent "Aww" to ${partnerName}` : `Sent "${current.text}" back to ${partnerName}`, kind === 'aww' ? '🥰' : current.emoji);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setSending(null);
+    }
+  }
 
   const floaters = useMemo(
     () =>
@@ -89,17 +132,17 @@ export function NudgeOverlay() {
             <p className="mt-4 text-sm font-medium uppercase tracking-[0.12em] text-muted">{nudge.fromName}</p>
             <p className="mt-1 font-display text-2xl leading-snug">{nudge.text}</p>
             <div className="mt-6 flex gap-2">
-              <Button variant="outline" block onClick={clear}>
-                {nudge.mine ? 'Close' : 'Aww'}
-              </Button>
+              {nudge.mine ? (
+                <Button variant="outline" block onClick={clear}>
+                  Close
+                </Button>
+              ) : (
+                <Button variant="outline" block loading={sending === 'aww'} disabled={Boolean(sending)} onClick={() => void respond('aww', nudge)}>
+                  🥰 Aww
+                </Button>
+              )}
               {!nudge.mine && (
-                <Button
-                  block
-                  onClick={() => {
-                    clear();
-                    navigate('/nudges');
-                  }}
-                >
+                <Button block loading={sending === 'back'} disabled={Boolean(sending)} onClick={() => void respond('back', nudge)}>
                   Send one back
                 </Button>
               )}

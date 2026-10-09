@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, X } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -98,6 +99,19 @@ export default function Nudges() {
   const partner = usePartner();
   const { send, sending, sent } = useSendNudge();
   const { data, isLoading } = useQuery({ queryKey: ['nudges'], queryFn: () => get<{ recent: Nudge[] }>('/nudges') });
+  const [params, setParams] = useSearchParams();
+  const openId = params.get('open');
+
+  // Opened from a notification: show that nudge in the pop-up, the way it would have arrived.
+  useEffect(() => {
+    if (!openId || !data || !partner) return;
+    const n = data.recent.find((x) => x.id === openId);
+    if (n) {
+      const mine = n.fromId === me.id;
+      useRealtime.getState().showNudge({ emoji: n.emoji, text: n.text, gif: n.gif?.url ? n.gif : null, kind: n.kind, fromName: mine ? 'You' : partner.name, replay: true, mine });
+    }
+    setParams({}, { replace: true });
+  }, [openId, data, partner, me.id, setParams]);
   const gifsEnabled = useAuth((s) => s.config?.gifsEnabled ?? false);
   const [gifMode, setGifModeState] = useState<GifMode>(readGifMode);
   const [choosing, setChoosing] = useState<{ emoji: string; text: string; query: string } | null>(null);
