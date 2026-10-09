@@ -12,3 +12,4 @@ export * from './Planning';
 export * from './Together';
 export * from './Notification';
 export * from './Extras';
+export * from './Location';

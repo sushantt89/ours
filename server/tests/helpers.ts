@@ -11,6 +11,7 @@ export interface Person {
   get: (url: string) => request.Test;
   post: (url: string, body?: object) => request.Test;
   patch: (url: string, body?: object) => request.Test;
+  put: (url: string, body?: object) => request.Test;
   del: (url: string, body?: object) => request.Test;
 }
 
@@ -30,6 +31,7 @@ export async function signUp(name: string): Promise<Person> {
     get: (url) => auth(request(app).get(url)),
     post: (url, body) => auth(request(app).post(url)).send(body ?? {}),
     patch: (url, body) => auth(request(app).patch(url)).send(body ?? {}),
+    put: (url, body) => auth(request(app).put(url)).send(body ?? {}),
     del: (url, body) => auth(request(app).delete(url)).send(body ?? {}),
   };
 }

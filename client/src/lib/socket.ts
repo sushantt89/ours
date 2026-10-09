@@ -1,7 +1,7 @@
 import { io, type Socket } from 'socket.io-client';
 import { getAccessToken, refreshSession } from './api';
 import { queryClient } from './queryClient';
-import type { AppNotification, Message } from './types';
+import type { AppNotification, LocationState, LocationView, Message } from './types';
 import { useAuth } from '@/store/auth';
 import { useChat } from '@/store/chat';
 import { useRealtime } from '@/store/realtime';
@@ -62,6 +62,11 @@ export function connectSocket() {
   });
 
   socket.on('nudge', (nudge) => useRealtime.getState().showNudge(nudge));
+
+  // A partner who is sharing their location moved: update the map without refetching.
+  socket.on('location', (p: { userId: string } & LocationView) => {
+    queryClient.setQueryData<LocationState>(['location'], (old) => (old ? { ...old, partner: { sharing: p.sharing, until: p.until, position: p.position } } : old));
+  });
 
   // Calls: imported lazily so the call code only loads once a call happens.
   const calls = () => import('@/features/calls/callStore').then((m) => m.useCall.getState());

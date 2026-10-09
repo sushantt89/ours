@@ -30,6 +30,7 @@ export interface NotificationPrefs {
   games: boolean;
   journal: boolean;
   calls: boolean;
+  location: boolean;
   quietHours: { enabled: boolean; start: number; end: number };
 }
 
@@ -443,4 +444,24 @@ export interface MapPin {
   date: string;
   kind: 'image' | 'video';
   thumbUrl: string;
+}
+
+export interface SharedPosition {
+  lat: number;
+  lng: number;
+  accuracy: number | null;
+  at: string;
+}
+
+export interface LocationView {
+  sharing: boolean;
+  /** When sharing stops by itself; null means until turned off. */
+  until: string | null;
+  position: SharedPosition | null;
+}
+
+export interface LocationState {
+  me: LocationView;
+  partner: LocationView;
+  canRequestAt: string | null;
 }

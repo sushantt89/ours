@@ -9,6 +9,7 @@ import { useChat } from '@/store/chat';
 import { AppShell } from '@/components/layout/AppShell';
 import { NudgeOverlay } from '@/components/layout/NudgeOverlay';
 import { CallOverlay } from '@/features/calls/CallOverlay';
+import { useLocationSharing } from '@/features/locate/useLocationSharing';
 import { useE2EE } from '@/store/e2ee';
 import { patch } from '@/lib/api';
 import { browserTimeZone } from '@/lib/dates';
@@ -46,6 +47,7 @@ const Distance = lazy(() => import('@/features/distance/Distance'));
 const Games = lazy(() => import('@/features/games/Games'));
 const Recap = lazy(() => import('@/features/recap/Recap'));
 const MemoryMap = lazy(() => import('@/features/map/MemoryMap'));
+const Locate = lazy(() => import('@/features/locate/Locate'));
 
 /** Signed-in area. Guests are sent to sign in and brought back afterwards. */
 function RequireAuth() {
@@ -128,6 +130,7 @@ export default function App() {
   }, [navigate]);
 
   useLiveSession();
+  useLocationSharing();
 
   return (
     <>
@@ -173,6 +176,7 @@ export default function App() {
                 <Route path="/games" element={<Games />} />
                 <Route path="/recap" element={<Recap />} />
                 <Route path="/map" element={<MemoryMap />} />
+                <Route path="/locate" element={<Locate />} />
               </Route>
             </Route>
           </Route>

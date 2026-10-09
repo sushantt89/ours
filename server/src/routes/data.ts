@@ -16,6 +16,7 @@ import {
   Mood,
   User,
   Song,
+  Location,
   JournalDay,
   WatchItem,
   GameRound,
@@ -64,6 +65,7 @@ router.get('/export.json', async (req, res) => {
     LittleThing.find({ coupleId, userId: me }).lean(),
     GiftItem.find({ coupleId, $or: [{ kind: 'wish' }, { ownerId: me }] }).lean(),
   ]);
+  const myLocation = await Location.findOne({ coupleId, userId: me }).select('sharing until lat lng accuracy at').lean();
   // Your own wishlist never reveals what your partner has claimed.
   const safeGifts = gifts.map((g) => (String(g.ownerId) === String(me) && g.kind === 'wish' ? { ...g, claimedBy: undefined, status: g.status === 'given' ? 'given' : 'open' } : g));
 
@@ -95,6 +97,7 @@ router.get('/export.json', async (req, res) => {
         games,
         myLittleThings: littleThings,
         gifts: safeGifts,
+        myLocation,
         note: 'End-to-end encrypted messages are exported as ciphertext. They can only be read in the app with your passphrase.',
       },
       null,

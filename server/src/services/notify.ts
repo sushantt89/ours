@@ -20,7 +20,8 @@ export type NotificationType =
   | 'game'
   | 'journal'
   | 'call'
-  | 'recap';
+  | 'recap'
+  | 'location';
 
 /** Which user preference switch governs each notification type. */
 const CATEGORY: Record<NotificationType, NotificationCategory | null> = {
@@ -40,6 +41,7 @@ const CATEGORY: Record<NotificationType, NotificationCategory | null> = {
   journal: 'journal',
   call: 'calls',
   recap: 'anniversaries',
+  location: 'location',
 };
 
 /** Time-sensitive types that are allowed through quiet hours. */

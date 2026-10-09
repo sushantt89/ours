@@ -22,6 +22,7 @@ import {
   Clapperboard,
   Dices,
   MapPinned,
+  LocateFixed,
   Globe2,
   Heart,
   type LucideIcon,
@@ -75,6 +76,7 @@ export const GROUPS: NavGroup[] = [
     items: [
       { to: '/memories', label: 'Memories', icon: Images, emoji: '📸', hint: 'Photos, videos and albums' },
       { to: '/story', label: 'Our story', icon: BookHeart, emoji: '❤️', hint: 'Counter, milestones and year in review' },
+      { to: '/locate', label: 'Locate', icon: LocateFixed, emoji: '📍', hint: 'See where each other is, when you choose to share' },
       { to: '/map', label: 'Memory map', icon: MapPinned, emoji: '🗺️', hint: 'Everywhere you have been together' },
       { to: '/games', label: 'Games', icon: Dices, emoji: '🎲', hint: 'This or that, who is more likely, quizzes' },
       { to: '/little-things', label: 'Little things', icon: Heart, emoji: '🫶', hint: 'Love languages and what they love' },

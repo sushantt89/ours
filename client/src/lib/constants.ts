@@ -122,6 +122,7 @@ export const NOTIFICATION_SETTINGS: { key: string; label: string; hint: string }
   { key: 'games', label: 'Games', hint: 'New rounds and results' },
   { key: 'journal', label: 'Journal', hint: 'When your partner writes in your journal' },
   { key: 'calls', label: 'Calls', hint: 'Incoming and missed calls' },
+  { key: 'location', label: 'Location', hint: 'When your partner shares or asks for your location' },
   { key: 'reminders', label: 'Gentle reminders', hint: 'Occasional ideas, like planning a date night' },
 ];
 

@@ -7,7 +7,7 @@ const notificationSchema = new Schema(
     userId: { ...userRef, index: true },
     type: {
       type: String,
-      enum: ['message', 'nudge', 'note', 'memory', 'calendar', 'milestone', 'list', 'countdown', 'reminder', 'question', 'partner', 'song', 'game', 'journal', 'call', 'recap'],
+      enum: ['message', 'nudge', 'note', 'memory', 'calendar', 'milestone', 'list', 'countdown', 'reminder', 'question', 'partner', 'song', 'game', 'journal', 'call', 'recap', 'location'],
       required: true,
     },
     emoji: { type: String, default: '❤️' },

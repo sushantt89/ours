@@ -2,6 +2,7 @@ import type { AnyId } from '../models';
 import { Couple, Note, User, Memory, DateIdea, Countdown, CalendarEvent, Nudge, type CoupleDoc } from '../models';
 import { deliverNudge } from '../routes/nudges';
 import { backfillPlaces } from './geo';
+import { expireLocationSharing } from '../routes/location';
 import { notify } from './notify';
 import { sync } from './realtime';
 import { virtualEvents } from './calendar';
@@ -177,6 +178,7 @@ async function tick() {
   try {
     await deliverScheduledNotes();
     await deliverScheduledNudges();
+    await expireLocationSharing();
     await announceUnlockedNotes();
     // Date-based reminders only need checking a few times an hour.
     if (ticks++ % 15 === 0) {

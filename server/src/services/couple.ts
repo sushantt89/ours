@@ -26,6 +26,7 @@ import {
   JournalDay,
   type CoupleDoc,
   type UserDoc,
+  Location,
 } from '../models';
 import { deleteMedia } from './media';
 import { emitToCouple } from './realtime';
@@ -53,6 +54,7 @@ const COUPLE_COLLECTIONS = [
   WatchItem,
   GameRound,
   JournalDay,
+  Location,
 ] as const;
 
 /** Starter albums and lists so a new space doesn't open onto blank screens. */
@@ -101,6 +103,8 @@ export async function leaveCouple(user: UserDoc) {
   const couple = await Couple.findById(coupleId);
   user.coupleId = undefined;
   await user.save();
+  // Whoever leaves stops being locatable straight away.
+  await Location.deleteMany({ userId: user._id });
   if (!couple) return;
 
   couple.members = couple.members.filter((m) => !m.equals(user._id));

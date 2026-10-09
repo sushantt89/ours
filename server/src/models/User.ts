@@ -15,6 +15,7 @@ export const NOTIFICATION_TYPES = [
   'games',
   'journal',
   'calls',
+  'location',
 ] as const;
 
 export const LOVE_LANGUAGES = ['words', 'time', 'gifts', 'service', 'touch'] as const;

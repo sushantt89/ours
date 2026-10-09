@@ -101,6 +101,7 @@ export async function api<T = any>(path: string, opts: Options = {}): Promise<T>
 export const get = <T = any>(path: string, signal?: AbortSignal) => api<T>(path, { signal });
 export const post = <T = any>(path: string, body?: unknown) => api<T>(path, { method: 'POST', body: body ?? {} });
 export const patch = <T = any>(path: string, body: unknown) => api<T>(path, { method: 'PATCH', body });
+export const put = <T = any>(path: string, body: unknown) => api<T>(path, { method: 'PUT', body });
 export const del = <T = any>(path: string, body?: unknown) => api<T>(path, { method: 'DELETE', body });
 export const upload = <T = any>(path: string, form: FormData) => api<T>(path, { method: 'POST', form });
 
