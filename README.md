@@ -51,7 +51,7 @@ production the server refuses to start without `MONGODB_URI`, `JWT_ACCESS_SECRET
 | Google Drive | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Free |
 | Push notifications | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Free |
 | GIF and sticker search | `GIPHY_API_KEY` | Free developer key |
-| Call relay (TURN) for strict networks | `METERED_DOMAIN`, `METERED_API_KEY` (or `TURN_URLS`…) | Free tier (Metered: ~20 GB/month) |
+| Call relay (TURN) for strict networks | `METERED_DOMAIN`, `METERED_API_KEY` (or `TURN_URLS`…) | Free tier: 500 MB/month on Metered (only used when a direct connection fails); paid plans from US$99/month |
 | Memory map place lookup | none (OpenStreetMap Nominatim); `GEOCODING=off` to disable | Free, fair use |
 
 Features without configuration switch themselves off in the interface rather than showing
