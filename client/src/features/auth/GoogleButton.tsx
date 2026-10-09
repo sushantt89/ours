@@ -120,7 +120,9 @@ export function GoogleButton({ label = 'continue_with' }: { label?: 'continue_wi
 
   return (
     <div>
-      <div ref={ref} className="flex min-h-11 justify-center" aria-busy={!ready} />
+      {/* Google's button is an iframe with a light color scheme. In dark mode the browser paints an
+          opaque white backdrop behind a mismatched iframe, so match its scheme to keep it transparent. */}
+      <div ref={ref} className="flex min-h-11 justify-center [color-scheme:light]" aria-busy={!ready} />
       {divider}
     </div>
   );
