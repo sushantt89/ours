@@ -19,6 +19,13 @@ interface SheetProps {
 /** Bottom sheet on phones, centred dialog on larger screens. Traps focus and closes on Escape. */
 export function Sheet({ open, onClose, title, children, footer, variant = 'sheet', wide }: SheetProps) {
   const panel = useRef<HTMLDivElement>(null);
+  // Callers usually pass a new inline onClose on every render. Keeping it in a ref means the
+  // focus setup below runs only when the sheet opens, not on every keystroke inside it
+  // (re-running it stole focus from text fields and closed the phone keyboard).
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -33,7 +40,7 @@ export function Sheet({ open, onClose, title, children, footer, variant = 'sheet
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        onClose();
+        closeRef.current();
       } else if (e.key === 'Tab') {
         const items = focusable();
         if (!items.length) return;
@@ -55,7 +62,7 @@ export function Sheet({ open, onClose, title, children, footer, variant = 'sheet
       document.body.style.overflow = overflow;
       previous?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   return createPortal(
     <AnimatePresence>
