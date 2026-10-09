@@ -26,6 +26,9 @@ interface CallStore {
   facing: 'user' | 'environment';
   startedAt: number | null;
   endedReason: string | null;
+  /** Shrunk to a floating window so the rest of the app can be used during the call. */
+  minimized: boolean;
+  setMinimized: (minimized: boolean) => void;
   start: (kind: Kind) => Promise<void>;
   accept: () => Promise<void>;
   decline: () => void;
@@ -116,8 +119,11 @@ export const useCall = create<CallStore>((set, getState) => {
     pc = null;
     pendingCandidates = [];
     getState().local?.getTracks().forEach((t) => t.stop());
-    set({ state: reason ? 'ended' : 'idle', endedReason: reason, local: null, remote: null, muted: false, cameraOff: false });
-    if (reason) setTimeout(() => getState().state === 'ended' && set({ state: 'idle', callId: null, startedAt: null, endedReason: null }), 1800);
+    if (reason && getState().minimized) toast.info(reason, '📞');
+    // A minimised call just disappears when it ends; a full-screen one shows why for a moment.
+    set({ state: reason ? 'ended' : 'idle', endedReason: reason, local: null, remote: null, muted: false, cameraOff: false, ...(reason ? {} : { minimized: false }) });
+    if (document.pictureInPictureElement) void document.exitPictureInPicture().catch(() => undefined);
+    if (reason) setTimeout(() => getState().state === 'ended' && set({ state: 'idle', callId: null, startedAt: null, endedReason: null, minimized: false }), 1800);
   }
 
   async function connect(callId: string) {
@@ -165,6 +171,8 @@ export const useCall = create<CallStore>((set, getState) => {
     facing: 'user',
     startedAt: null,
     endedReason: null,
+    minimized: false,
+    setMinimized: (minimized) => set({ minimized }),
 
     async start(kind) {
       if (getState().state !== 'idle') return;
@@ -245,7 +253,7 @@ export const useCall = create<CallStore>((set, getState) => {
 
     onIncoming({ callId, kind, fromName }) {
       if (getState().state !== 'idle') return; // already on a call
-      set({ state: 'incoming', callId, kind, incomingFrom: fromName, startedAt: null, endedReason: null });
+      set({ state: 'incoming', callId, kind, incomingFrom: fromName, startedAt: null, endedReason: null, minimized: false });
       ring = playTone('ring');
     },
 
