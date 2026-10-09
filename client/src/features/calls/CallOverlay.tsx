@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { ChevronDown, Mic, MicOff, Phone, PhoneOff, PictureInPicture2, SwitchCamera, Video, VideoOff } from 'lucide-react';
+import { ChevronDown, Mic, MicOff, Phone, PhoneOff, PictureInPicture2, ScreenShare, ScreenShareOff, SwitchCamera, Video, VideoOff } from 'lucide-react';
 import { formatDuration } from '@/lib/media';
 import { cn } from '@/lib/cn';
 import { usePartner } from '@/store/auth';
 import { Avatar } from '@/components/ui';
-import { useCall } from './callStore';
+import { canShareScreen, useCall } from './callStore';
 
 function StreamVideo({
   stream,
@@ -108,7 +108,9 @@ export function CallOverlay() {
   const remoteHasVideo = Boolean(call.remote?.getVideoTracks().some((t) => t.readyState === 'live'));
   const name = call.state === 'incoming' ? call.incomingFrom : (partner?.name ?? 'Your partner');
   const remoteVideo = useRef<HTMLVideoElement>(null);
-  const showingRemote = video && Boolean(call.remote) && remoteHasVideo && call.state === 'active';
+  // A voice call shows video only while your partner shares their screen.
+  const showingRemote = (video || call.remoteSharing) && Boolean(call.remote) && remoteHasVideo && call.state === 'active';
+  const screenOk = canShareScreen();
   const pip = usePictureInPicture(remoteVideo, showingRemote);
   const canMinimize = call.state === 'outgoing' || call.state === 'connecting' || call.state === 'active';
   const mini = visible && call.minimized && canMinimize;
@@ -140,7 +142,12 @@ export function CallOverlay() {
         >
           {/* Remote video fills the screen once connected */}
           {showingRemote ? (
-            <StreamVideo stream={call.remote} videoRef={remoteVideo} className="absolute inset-0 size-full object-cover" />
+            <StreamVideo
+              stream={call.remote}
+              videoRef={remoteVideo}
+              // A shared screen is shown whole (letterboxed), never cropped like a face.
+              className={cn('absolute inset-0 size-full', call.remoteSharing ? 'bg-black object-contain' : 'object-cover')}
+            />
           ) : (
             <>
               <div className="absolute inset-0 opacity-70 [background:radial-gradient(60rem_40rem_at_50%_0%,var(--accent),transparent_60%),radial-gradient(40rem_30rem_at_100%_100%,var(--accent-2),transparent_60%)]" />
@@ -149,7 +156,7 @@ export function CallOverlay() {
             </>
           )}
           {/* Your own camera: the whole screen while ringing, a small corner window once connected */}
-          {video && call.local && !call.cameraOff && (
+          {video && call.local && !call.cameraOff && !call.sharingScreen && (
             <StreamVideo
               stream={call.local}
               muted
@@ -201,6 +208,24 @@ export function CallOverlay() {
             </p>
           </div>
 
+          {call.state === 'active' && (call.sharingScreen || call.remoteSharing) && (
+            <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+8rem)] z-20 flex justify-center px-4 sm:bottom-auto sm:top-[calc(env(safe-area-inset-top)+0.9rem)] sm:px-28">
+              <span className="flex items-center gap-2 whitespace-nowrap rounded-full bg-black/55 px-3.5 py-1.5 text-sm font-medium backdrop-blur">
+                <ScreenShare className="size-4" />
+                {call.sharingScreen ? (
+                  <>
+                    You're sharing your screen
+                    <button onClick={() => void call.stopScreen()} className="ml-1 rounded-full bg-red-500 px-2.5 py-0.5 text-xs font-semibold hover:bg-red-600">
+                      Stop
+                    </button>
+                  </>
+                ) : (
+                  `${name} is sharing their screen`
+                )}
+              </span>
+            </div>
+          )}
+
           <div className="safe-bottom relative z-10 pb-10">
             {call.state === 'incoming' ? (
               <div className="flex items-center justify-center gap-16">
@@ -231,6 +256,15 @@ export function CallOverlay() {
                       <SwitchCamera className="size-6" />
                     </Round>
                   </>
+                )}
+                {screenOk && call.state === 'active' && (
+                  <Round
+                    label={call.sharingScreen ? 'Stop sharing your screen' : 'Share your screen'}
+                    active={call.sharingScreen}
+                    onClick={() => void (call.sharingScreen ? call.stopScreen() : call.shareScreen())}
+                  >
+                    {call.sharingScreen ? <ScreenShareOff className="size-6" /> : <ScreenShare className="size-6" />}
+                  </Round>
                 )}
                 <Round big danger label={call.state === 'outgoing' ? 'Cancel call' : 'End call'} onClick={call.hangUp}>
                   <PhoneOff className="size-7" />

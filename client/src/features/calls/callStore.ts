@@ -29,6 +29,12 @@ interface CallStore {
   /** Shrunk to a floating window so the rest of the app can be used during the call. */
   minimized: boolean;
   setMinimized: (minimized: boolean) => void;
+  /** You are showing your screen instead of your camera. */
+  sharingScreen: boolean;
+  /** Your partner is showing their screen. */
+  remoteSharing: boolean;
+  shareScreen: () => Promise<void>;
+  stopScreen: () => Promise<void>;
   start: (kind: Kind) => Promise<void>;
   accept: () => Promise<void>;
   decline: () => void;
@@ -46,13 +52,22 @@ interface CallStore {
 interface SignalData {
   description?: RTCSessionDescriptionInit;
   candidate?: RTCIceCandidateInit;
+  /** Tells the other side a screen share started or stopped. */
+  screen?: boolean;
 }
+
+/** Desktop browsers can share a screen; phone browsers can't (they can still watch one). */
+export const canShareScreen = () =>
+  typeof navigator !== 'undefined' && Boolean(navigator.mediaDevices?.getDisplayMedia) && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 let pc: RTCPeerConnection | null = null;
 let pendingCandidates: RTCIceCandidateInit[] = [];
 let iceCache: { servers: RTCIceServer[]; at: number } | null = null;
 let ring: { stop: () => void } | null = null;
 let failTimer: ReturnType<typeof setTimeout> | undefined;
+let screenTrack: MediaStreamTrack | null = null;
+/** Sender used for the screen in a voice call (a video call reuses its camera sender). */
+let screenSender: RTCRtpSender | null = null;
 
 async function iceServers() {
   if (iceCache && Date.now() - iceCache.at < 30 * 60_000) return iceCache.servers;
@@ -118,10 +133,13 @@ export const useCall = create<CallStore>((set, getState) => {
     pc?.close();
     pc = null;
     pendingCandidates = [];
+    screenTrack?.stop();
+    screenTrack = null;
+    screenSender = null;
     getState().local?.getTracks().forEach((t) => t.stop());
     if (reason && getState().minimized) toast.info(reason, '📞');
     // A minimised call just disappears when it ends; a full-screen one shows why for a moment.
-    set({ state: reason ? 'ended' : 'idle', endedReason: reason, local: null, remote: null, muted: false, cameraOff: false, ...(reason ? {} : { minimized: false }) });
+    set({ state: reason ? 'ended' : 'idle', endedReason: reason, local: null, remote: null, muted: false, cameraOff: false, sharingScreen: false, remoteSharing: false, ...(reason ? {} : { minimized: false }) });
     if (document.pictureInPictureElement) void document.exitPictureInPicture().catch(() => undefined);
     if (reason) setTimeout(() => getState().state === 'ended' && set({ state: 'idle', callId: null, startedAt: null, endedReason: null, minimized: false }), 1800);
   }
@@ -173,6 +191,63 @@ export const useCall = create<CallStore>((set, getState) => {
     endedReason: null,
     minimized: false,
     setMinimized: (minimized) => set({ minimized }),
+    sharingScreen: false,
+    remoteSharing: false,
+
+    async shareScreen() {
+      const { callId, state } = getState();
+      if (!pc || !callId || state !== 'active' || getState().sharingScreen) return;
+      let display: MediaStream;
+      try {
+        display = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 15, max: 30 } }, audio: false });
+      } catch {
+        return; // picker cancelled
+      }
+      const track = display.getVideoTracks()[0];
+      if (!track || !pc) return track?.stop();
+      track.contentHint = 'detail'; // keep text sharp rather than smooth
+      screenTrack = track;
+      // The browser's own "Stop sharing" bar ends the track.
+      track.onended = () => void getState().stopScreen();
+      try {
+        const camera = pc.getSenders().find((sender) => sender.track?.kind === 'video');
+        if (camera) {
+          await camera.replaceTrack(track);
+        } else if (screenSender) {
+          await screenSender.replaceTrack(track);
+        } else {
+          // A voice call has no video yet: add it and renegotiate once.
+          screenSender = pc.addTrack(track, display);
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          emit('call:signal', { callId, data: { description: pc.localDescription!.toJSON() } });
+        }
+        emit('call:signal', { callId, data: { screen: true } });
+        set({ sharingScreen: true });
+      } catch {
+        track.stop();
+        screenTrack = null;
+        toast.error("Couldn't share your screen");
+      }
+    },
+
+    async stopScreen() {
+      const { callId } = getState();
+      const track = screenTrack;
+      screenTrack = null;
+      if (track) {
+        track.onended = null;
+        track.stop();
+      }
+      if (pc) {
+        const cameraTrack = getState().local?.getVideoTracks()[0] ?? null;
+        const sending = pc.getSenders().find((sender) => sender.track === track && track);
+        if (sending && sending !== screenSender) await sending.replaceTrack(cameraTrack).catch(() => undefined);
+        else if (screenSender) await screenSender.replaceTrack(null).catch(() => undefined);
+      }
+      if (callId && getState().sharingScreen) emit('call:signal', { callId, data: { screen: false } });
+      set({ sharingScreen: false });
+    },
 
     async start(kind) {
       if (getState().state !== 'idle') return;
@@ -269,6 +344,10 @@ export const useCall = create<CallStore>((set, getState) => {
 
     async onSignal({ callId, data }) {
       if (getState().callId !== callId || !pc) return;
+      if (typeof data.screen === 'boolean') {
+        set({ remoteSharing: data.screen, ...(data.screen ? { minimized: false } : {}) });
+        return;
+      }
       try {
         if (data.description) {
           await pc.setRemoteDescription(data.description);
