@@ -19,7 +19,7 @@ export function Avatar({
   const [failed, setFailed] = useState(false);
   const initial = name.trim().charAt(0).toUpperCase() || '♥';
   return (
-    <span className={cn('relative inline-block shrink-0', className)}>
+    <span className={cn('relative inline-flex shrink-0', className)}>
       <span className={cn('grid place-items-center overflow-hidden rounded-full font-display font-medium text-on-accent accent-gradient', sizes[size])}>
         {src && !failed ? (
           <img src={src} alt="" className="size-full object-cover" onError={() => setFailed(true)} />

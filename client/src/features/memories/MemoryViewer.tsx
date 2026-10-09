@@ -174,7 +174,7 @@ export function MemoryViewer({ memories, index, onIndex, albums, startSlideshow 
 
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label="Memory" className="fixed inset-0 z-40 flex flex-col bg-black text-white">
-      <div className="safe-top absolute inset-x-0 top-0 z-10 flex items-center gap-2 bg-gradient-to-b from-black/70 to-transparent p-3">
+      <div className="absolute inset-x-0 top-0 z-10 flex items-center gap-2 bg-gradient-to-b from-black/70 to-transparent p-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <button aria-label="Close" className={iconButton} onClick={() => onIndex(null)}>
           <X className="size-5" />
         </button>

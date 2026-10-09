@@ -282,7 +282,7 @@ function StoryPlayer({ periodKey, onClose }: { periodKey: string; onClose: () =>
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label="Year in review" className="fixed inset-0 z-[60] flex items-center justify-center bg-black">
       <div className="relative h-full w-full max-w-md overflow-hidden text-white sm:h-[92dvh] sm:rounded-[32px]" style={{ background: BACKGROUNDS[index % BACKGROUNDS.length], transition: 'background 0.6s' }}>
-        <div className="safe-top absolute inset-x-0 top-0 z-10 px-3 pt-3">
+        <div className="absolute inset-x-0 top-0 z-10 px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
           <div className="flex gap-1">
             {slides.map((_, i) => (
               <span key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-white/30">

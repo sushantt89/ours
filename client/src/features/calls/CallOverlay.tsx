@@ -157,14 +157,14 @@ export function CallOverlay() {
               className={cn(
                 'object-cover transition-all duration-500',
                 call.state === 'active' && remoteHasVideo
-                  ? 'safe-top absolute right-4 top-4 z-10 aspect-[3/4] w-28 rounded-2xl border-2 border-white/30 shadow-2xl sm:w-40'
+                  ? 'absolute right-4 top-[calc(env(safe-area-inset-top)+1rem)] z-10 aspect-[3/4] w-28 rounded-2xl border-2 border-white/30 shadow-2xl sm:w-40'
                   : 'absolute inset-0 size-full opacity-40',
               )}
             />
           )}
 
           {canMinimize && (
-            <div className="safe-top absolute left-3 top-3 z-20 flex gap-2">
+            <div className="absolute left-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-20 flex gap-2">
               <button
                 onClick={() => call.setMinimized(true)}
                 aria-label="Minimise call"
@@ -187,11 +187,11 @@ export function CallOverlay() {
             </div>
           )}
 
-          <div className="safe-top relative z-[5] flex flex-1 flex-col items-center px-6 pt-20 text-center">
+          <div className="relative z-[5] flex flex-1 flex-col items-center px-6 pt-[calc(env(safe-area-inset-top)+5rem)] text-center">
             {!showingRemote && (
               <>
                 <motion.div animate={call.state === 'incoming' || call.state === 'outgoing' ? { scale: [1, 1.06, 1] } : {}} transition={{ repeat: Infinity, duration: 1.6 }}>
-                  <Avatar name={name} src={partner?.avatarUrl} size="xl" className="ring-4 ring-white/20" />
+                  <Avatar name={name} src={partner?.avatarUrl} size="xl" className="rounded-full ring-4 ring-white/20" />
                 </motion.div>
                 <p className="mt-5 font-display text-3xl">{name}</p>
               </>

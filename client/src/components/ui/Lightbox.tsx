@@ -20,7 +20,7 @@ export function Lightbox({ media, onClose }: { media: Media | null; onClose: () 
   if (!media) return null;
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label="Media viewer" className="fixed inset-0 z-[65] flex animate-fade-up items-center justify-center bg-black/95" onClick={onClose}>
-      <div className="safe-top absolute inset-x-0 top-0 z-10 flex justify-end gap-2 p-3">
+      <div className="absolute inset-x-0 top-0 z-10 flex justify-end gap-2 p-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <a
           href={media.url.startsWith('blob:') ? media.url : `${media.url}?download=1`}
           download={media.name}
