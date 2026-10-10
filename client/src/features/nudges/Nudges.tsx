@@ -37,12 +37,20 @@ export function useSendNudge() {
     setSending(text);
     navigator.vibrate?.(25);
     try {
-      // A GIF that can't be found (no results, GIPHY down) never blocks the nudge itself.
-      const picked = typeof gif === 'string' ? await randomGif(gif).catch(() => null) : gif;
+      // A GIF that can't be found (no results, GIPHY's limit reached) never blocks the nudge itself.
+      let gifProblem = '';
+      const picked =
+        typeof gif === 'string'
+          ? await randomGif(gif).catch((err) => {
+              gifProblem = errorMessage(err);
+              return null;
+            })
+          : gif;
       const attached: NudgeGif | undefined = picked ? { url: picked.url, preview: picked.preview, width: picked.width, height: picked.height } : undefined;
       await post('/nudges', { emoji, text, gif: attached });
       setSent({ key: Date.now(), text });
-      toast.success(`Sent to ${partner.name}`, emoji);
+      if (gifProblem) toast.info(`Sent without a GIF. ${gifProblem}`, emoji);
+      else toast.success(`Sent to ${partner.name}`, emoji);
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {

@@ -13,13 +13,21 @@ import { Button, randomGif } from '@/components/ui';
 async function reply(emoji: string, text: string, withGif: boolean) {
   const gifsEnabled = useAuth.getState().config?.gifsEnabled;
   const search = NUDGES.find((n) => n.text === text)?.gif ?? text;
-  const picked = withGif && gifsEnabled ? await randomGif(search).catch(() => null) : null;
+  let gifProblem = '';
+  const picked =
+    withGif && gifsEnabled
+      ? await randomGif(search).catch((err) => {
+          gifProblem = errorMessage(err);
+          return null;
+        })
+      : null;
   await post('/nudges', {
     emoji,
     text,
     gif: picked ? { url: picked.url, preview: picked.preview, width: picked.width, height: picked.height } : undefined,
   });
   void queryClient.invalidateQueries({ queryKey: ['nudges'] });
+  return gifProblem;
 }
 
 /** The little celebration that plays when your partner nudges you. */
@@ -52,10 +60,11 @@ export function NudgeOverlay() {
   async function respond(kind: 'aww' | 'back', current: IncomingNudge) {
     setSending(kind);
     try {
+      const gifProblem = kind === 'aww' ? '' : await reply(current.emoji, current.text, Boolean(current.gif?.url));
       if (kind === 'aww') await reply('🥰', 'Aww', false);
-      else await reply(current.emoji, current.text, Boolean(current.gif?.url));
       clear();
-      toast.success(kind === 'aww' ? `Sent "Aww" to ${partnerName}` : `Sent "${current.text}" back to ${partnerName}`, kind === 'aww' ? '🥰' : current.emoji);
+      if (gifProblem) toast.info(`Sent without a GIF. ${gifProblem}`, current.emoji);
+      else toast.success(kind === 'aww' ? `Sent "Aww" to ${partnerName}` : `Sent "${current.text}" back to ${partnerName}`, kind === 'aww' ? '🥰' : current.emoji);
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {

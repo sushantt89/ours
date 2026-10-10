@@ -48,13 +48,15 @@ export function GifResults({
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // A single letter isn't worth one of the hour's GIF searches.
+    if (query.trim().length === 1) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
       setError('');
       searchGifs(query, type, controller.signal)
         .then(setResults)
         .catch((err) => err.name !== 'AbortError' && setError(errorMessage(err)));
-    }, 300);
+    }, 600);
     return () => {
       clearTimeout(timer);
       controller.abort();
