@@ -3,7 +3,7 @@ import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react
 import { get } from '@/lib/api';
 import { connectSocket, disconnectSocket } from '@/lib/socket';
 import { setBadge } from '@/lib/push';
-import { registerServiceWorker } from '@/lib/pwa';
+import { announceUpdate, registerServiceWorker } from '@/lib/pwa';
 import { useAuth } from '@/store/auth';
 import { useChat } from '@/store/chat';
 import { AppShell } from '@/components/layout/AppShell';
@@ -120,6 +120,7 @@ export default function App() {
   useEffect(() => {
     void bootstrap();
     registerServiceWorker();
+    announceUpdate();
   }, [bootstrap]);
 
   useEffect(() => {

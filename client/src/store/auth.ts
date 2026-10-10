@@ -58,6 +58,9 @@ async function wipeLocalData() {
   }
 }
 
+let configListener = false;
+let outdatedHandled = false;
+
 /**
  * The server's feature switches (GIFs, Google, push…). A free host can take a minute to wake
  * up, so a failed fetch is retried with backoff instead of leaving features hidden all session.
@@ -82,7 +85,23 @@ export const useAuth = create<AuthState>((set, getState) => ({
   offlineSession: false,
 
   async bootstrap() {
-    void loadConfig((config) => set({ config }));
+    const apply = (config: AppConfig) => {
+      set({ config });
+      // An installed app can keep running an old copy for days. If the server is on a
+      // newer version than this one, switch to it.
+      if (import.meta.env.PROD && config.commit && __APP_COMMIT__ && config.commit !== __APP_COMMIT__ && !outdatedHandled) {
+        outdatedHandled = true;
+        void import('@/lib/pwa').then((m) => m.updateApp());
+      }
+    };
+    void loadConfig(apply);
+    if (!configListener) {
+      configListener = true;
+      // Features can be switched on or off on the server while the app stays open.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') void get<AppConfig>('/auth/config').then(apply).catch(() => undefined);
+      });
+    }
     try {
       const ok = await refreshSession();
       if (!ok) set({ status: 'guest' });

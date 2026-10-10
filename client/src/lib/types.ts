@@ -116,6 +116,7 @@ export interface Session {
 export interface AppConfig {
   googleClientId: string | null;
   pushPublicKey: string | null;
+  commit?: string | null;
   driveEnabled: boolean;
   gifsEnabled: boolean;
   maxUploadMb: number;

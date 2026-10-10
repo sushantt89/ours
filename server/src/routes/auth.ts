@@ -39,6 +39,8 @@ router.get('/config', (_req, res) => {
     gifsEnabled: env.gifsEnabled,
     turnEnabled: env.turnEnabled,
     maxUploadMb: env.MAX_UPLOAD_MB,
+    // The version deployed right now; installed apps compare it with their own and update.
+    commit: (process.env.RENDER_GIT_COMMIT ?? process.env.SOURCE_COMMIT ?? '').slice(0, 7) || null,
   });
 });
 

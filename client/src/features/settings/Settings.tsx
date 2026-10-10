@@ -27,6 +27,7 @@ const SECTIONS = [
   { id: 'privacy', label: 'Privacy' },
   { id: 'encryption', label: 'Encryption' },
   { id: 'data', label: 'Data' },
+  { id: 'about', label: 'About' },
 ] as const;
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
@@ -689,6 +690,61 @@ function DataSection() {
   );
 }
 
+/** Which version is running and which features the server has switched on, plus a manual update. */
+function AboutSection() {
+  const config = useAuth((s) => s.config);
+  const [checking, setChecking] = useState(false);
+  const version = __APP_COMMIT__ ? `${__APP_COMMIT__} · built ${__APP_BUILT__} UTC` : `built ${__APP_BUILT__} UTC`;
+  const outdated = Boolean(config?.commit && __APP_COMMIT__ && config.commit !== __APP_COMMIT__);
+  const features: [string, boolean | undefined][] = [
+    ['GIFs', config?.gifsEnabled],
+    ['Notifications', Boolean(config?.pushPublicKey)],
+    ['Google', Boolean(config?.googleClientId)],
+    ['Call relay', config?.turnEnabled],
+  ];
+
+  async function check() {
+    setChecking(true);
+    try {
+      const { updateApp } = await import('@/lib/pwa');
+      if ((await updateApp()) === 'current') toast.success("You're on the latest version");
+      else toast.info('Updating…', '✨');
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  return (
+    <Section id="about" title="About">
+      <Card className="space-y-3 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-medium">App version</p>
+            <p className="truncate text-sm text-muted">{version}</p>
+            {outdated && <p className="text-sm text-accent">A newer version is available</p>}
+          </div>
+          <Button variant="outline" size="sm" loading={checking} onClick={check}>
+            Check for updates
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {config ? (
+            features.map(([label, on]) => (
+              <span key={label} className={cn('rounded-full px-2.5 py-1 text-xs font-medium', on ? 'bg-success/15 text-success' : 'bg-surface-2 text-faint')}>
+                {label}: {on ? 'on' : 'off'}
+              </span>
+            ))
+          ) : (
+            <span className="text-sm text-muted">Couldn't reach the server for feature settings yet.</span>
+          )}
+        </div>
+      </Card>
+    </Section>
+  );
+}
+
 export default function Settings() {
   const [params] = useSearchParams();
   const [active, setActive] = useState<string>(params.get('section') ?? 'account');
@@ -734,6 +790,7 @@ export default function Settings() {
       <PrivacySection />
       <EncryptionSection />
       <DataSection />
+      <AboutSection />
       <p className="pt-10 text-center text-xs text-faint">Ours · made for two</p>
     </Page>
   );

@@ -48,20 +48,14 @@ export function registerServiceWorker() {
       // A version that finished downloading last time: switch now, while the app is just opening.
       if (registration.waiting && navigator.serviceWorker.controller) activate(registration.waiting);
 
-      // A new version downloaded while the app is open: offer it, and switch by itself the next
-      // time the app goes into the background, so nobody has to remember to tap "Update".
+      // A new version downloaded while the app is open: switch to it by itself, nothing to tap.
+      // It waits for a quiet moment so it never reloads mid-sentence or mid-call, and happens at
+      // once if the app is in the background.
       registration.addEventListener('updatefound', () => {
         const worker = registration.installing;
         worker?.addEventListener('statechange', () => {
           if (worker.state !== 'installed' || !navigator.serviceWorker.controller) return;
-          if (document.visibilityState === 'hidden') return activate(worker);
-          toast.info('A new version is ready', '✨', { label: 'Update', onClick: () => activate(worker) });
-          const onHide = () => {
-            if (document.visibilityState !== 'hidden') return;
-            document.removeEventListener('visibilitychange', onHide);
-            activate(worker);
-          };
-          document.addEventListener('visibilitychange', onHide);
+          whenIdle(() => activate(worker));
         });
       });
 
@@ -76,6 +70,11 @@ export function registerServiceWorker() {
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (reloaded || !hadController) return;
         reloaded = true;
+        try {
+          sessionStorage.setItem('ours:updated', '1');
+        } catch {
+          /* fine without the note */
+        }
         location.reload();
       });
     } catch {
@@ -99,4 +98,61 @@ function listenForNavigation() {
 /** Hands the service worker the few facts its home-screen widgets need. */
 export function shareWidgetData(data: unknown) {
   navigator.serviceWorker?.controller?.postMessage({ type: 'widget-data', data });
+}
+
+/**
+ * Fetches the newest version of the app and switches to it. Used when the server reports a
+ * newer version than the one running, and by "Check for updates" in Settings.
+ */
+export async function updateApp(): Promise<'updating' | 'current'> {
+  const registration = await navigator.serviceWorker?.getRegistration().catch(() => undefined);
+  if (!registration) {
+    location.reload();
+    return 'updating';
+  }
+  await registration.update().catch(() => undefined);
+  const worker = registration.waiting ?? registration.installing;
+  if (!worker) return 'current';
+  const activate = () => worker.postMessage({ type: 'skip-waiting' });
+  if (worker.state === 'installed') activate();
+  else worker.addEventListener('statechange', () => worker.state === 'installed' && activate());
+  // The page reloads itself once the new version takes over (see registerServiceWorker).
+  return 'updating';
+}
+
+/** True while someone is typing something, or on a call: not a moment to reload the app. */
+function busy() {
+  const el = document.activeElement as HTMLInputElement | HTMLTextAreaElement | null;
+  const typing = Boolean(el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') && el.value?.trim());
+  const inCall = Boolean(document.querySelector('[aria-label^="Call with"]'));
+  return typing || inCall;
+}
+
+/** Runs `fn` now if the app is hidden or idle, otherwise as soon as it is. */
+function whenIdle(fn: () => void) {
+  let done = false;
+  const run = () => {
+    if (done) return;
+    if (document.visibilityState === 'hidden' || !busy()) {
+      done = true;
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+      fn();
+    }
+  };
+  const onVisibility = () => document.visibilityState === 'hidden' && run();
+  const timer = setInterval(run, 5000);
+  document.addEventListener('visibilitychange', onVisibility);
+  run();
+}
+
+/** After an automatic update, a small note so a reload never feels like a glitch. */
+export function announceUpdate() {
+  try {
+    if (sessionStorage.getItem('ours:updated') !== '1') return;
+    sessionStorage.removeItem('ours:updated');
+    setTimeout(() => toast.success('Updated to the latest version', '✨'), 600);
+  } catch {
+    /* storage unavailable */
+  }
 }

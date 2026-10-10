@@ -7,8 +7,15 @@ import path from 'node:path';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const api = env.VITE_DEV_API || 'http://localhost:4000';
+  // Identifies this build, so an installed app can tell when the server has a newer one.
+  const commit = (process.env.RENDER_GIT_COMMIT || process.env.SOURCE_COMMIT || '').slice(0, 7);
+  const built = new Date().toISOString().slice(0, 16).replace('T', ' ');
 
   return {
+    define: {
+      __APP_COMMIT__: JSON.stringify(commit),
+      __APP_BUILT__: JSON.stringify(built),
+    },
     plugins: [
       react(),
       tailwindcss(),
