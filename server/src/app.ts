@@ -31,6 +31,7 @@ import { songs, littleThings, gifts, watchlist, journal, places } from './routes
 import games from './routes/games';
 import recap from './routes/recap';
 import location from './routes/location';
+import arcade from './routes/arcade';
 import { iceServers } from './services/calls';
 
 export function createApp() {
@@ -132,6 +133,7 @@ export function createApp() {
   api.use('/games', coupleOnly, games);
   api.use('/recap', coupleOnly, recap);
   api.use('/location', coupleOnly, location);
+  api.use('/arcade', coupleOnly, arcade);
   api.get('/calls/ice', requireAuth, requireCouple, async (_req, res) => {
     res.json({ iceServers: await iceServers() });
   });

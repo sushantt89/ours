@@ -86,11 +86,25 @@ export const WatchItem = model('WatchItem', watchSchema);
 
 /* ── Couple games ────────────────────────────────────────────────────── */
 
+/** "Both answer, then reveal" games. */
+export const PROMPT_GAMES = [
+  'this_or_that',
+  'most_likely',
+  'know_me',
+  'would_you_rather',
+  'never_have_i_ever',
+  'hot_takes',
+  'rate_it',
+  'finish_sentence',
+  'two_truths',
+] as const;
+export type PromptGame = (typeof PROMPT_GAMES)[number];
+
 const gameSchema = new Schema(
   {
     coupleId: coupleRef,
     createdBy: userRef,
-    game: { type: String, enum: ['this_or_that', 'most_likely', 'know_me'], required: true },
+    game: { type: String, enum: PROMPT_GAMES, required: true },
     /** For "know me", the person being guessed about. */
     subjectId: ObjectId,
     prompts: [
@@ -102,7 +116,7 @@ const gameSchema = new Schema(
         _id: false,
       },
     ],
-    answers: [{ userId: ObjectId, picks: [Number], at: Date, _id: false }],
+    answers: [{ userId: ObjectId, picks: [Number], texts: [String], at: Date, _id: false }],
     status: { type: String, enum: ['open', 'done'], default: 'open' },
   },
   { timestamps: true },
@@ -110,6 +124,35 @@ const gameSchema = new Schema(
 gameSchema.index({ coupleId: 1, createdAt: -1 });
 export type GameDoc = HydratedDocument<InferSchemaType<typeof gameSchema>>;
 export const GameRound = model('GameRound', gameSchema);
+
+/* ── Arcade: solo games with a shared leaderboard ───────────────────── */
+
+const arcadeScoreSchema = new Schema(
+  {
+    coupleId: coupleRef,
+    userId: userRef,
+    game: { type: String, required: true, maxlength: 32 },
+    score: { type: Number, required: true },
+  },
+  { timestamps: true },
+);
+arcadeScoreSchema.index({ coupleId: 1, game: 1, userId: 1, score: -1 });
+export const ArcadeScore = model('ArcadeScore', arcadeScoreSchema);
+
+/** Daily word puzzle: one secret word per couple per day; each person's guesses. */
+const dailyWordSchema = new Schema(
+  {
+    coupleId: coupleRef,
+    userId: userRef,
+    date: { type: String, required: true },
+    guesses: { type: [String], default: [] },
+    solved: { type: Boolean, default: false },
+    finished: { type: Boolean, default: false },
+  },
+  { timestamps: true },
+);
+dailyWordSchema.index({ coupleId: 1, date: 1, userId: 1 }, { unique: true });
+export const DailyWordPlay = model('DailyWordPlay', dailyWordSchema);
 
 /* ── Shared journal: one page per day that both can write on ─────────── */
 

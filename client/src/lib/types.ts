@@ -419,15 +419,30 @@ export interface JournalDay {
   parts: JournalPart[];
 }
 
+export type PromptGameId =
+  | 'this_or_that'
+  | 'most_likely'
+  | 'know_me'
+  | 'would_you_rather'
+  | 'never_have_i_ever'
+  | 'hot_takes'
+  | 'rate_it'
+  | 'finish_sentence'
+  | 'two_truths';
+
 export interface GameRound {
   id: string;
-  game: 'this_or_that' | 'most_likely' | 'know_me';
+  game: PromptGameId;
+  /** How it's scored: match, opposite (who's more likely), close (ratings), quiz (guess about one person), text (written, no score). */
+  kind: 'match' | 'opposite' | 'close' | 'quiz' | 'text';
   name: string;
   createdBy: string;
   subjectId: string | null;
   youPlay: boolean;
   prompts: { text: string; options: string[]; correct: number | null }[];
   myPicks: number[] | null;
+  myTexts: string[] | null;
+  partnerTexts: string[] | null;
   partnerAnswered: boolean;
   partnerPicks: number[] | null;
   status: 'open' | 'done';

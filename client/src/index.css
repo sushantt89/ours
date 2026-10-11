@@ -235,3 +235,18 @@
 @media (prefers-reduced-motion: reduce) {
   .ours-person::before { animation: none; }
 }
+
+/* Games */
+@keyframes pop-in {
+  from { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+@keyframes float-up {
+  from { transform: translate(-50%, 0); opacity: 1; }
+  to { transform: translate(-50%, -36px); opacity: 0; }
+}
+@keyframes shake-x {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}

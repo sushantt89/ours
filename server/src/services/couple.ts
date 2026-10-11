@@ -24,6 +24,8 @@ import {
   WatchItem,
   GameRound,
   JournalDay,
+  ArcadeScore,
+  DailyWordPlay,
   type CoupleDoc,
   type UserDoc,
   Location,
@@ -54,6 +56,8 @@ const COUPLE_COLLECTIONS = [
   WatchItem,
   GameRound,
   JournalDay,
+  ArcadeScore,
+  DailyWordPlay,
   Location,
 ] as const;
 

@@ -17,6 +17,8 @@ import {
   User,
   Song,
   Location,
+  ArcadeScore,
+  DailyWordPlay,
   JournalDay,
   WatchItem,
   GameRound,
@@ -66,6 +68,10 @@ router.get('/export.json', async (req, res) => {
     GiftItem.find({ coupleId, $or: [{ kind: 'wish' }, { ownerId: me }] }).lean(),
   ]);
   const myLocation = await Location.findOne({ coupleId, userId: me }).select('sharing until lat lng accuracy at').lean();
+  const [arcadeScores, dailyWords] = await Promise.all([
+    ArcadeScore.find({ coupleId, userId: me }).select('game score createdAt').lean(),
+    DailyWordPlay.find({ coupleId, userId: me }).select('date guesses solved').lean(),
+  ]);
   // Your own wishlist never reveals what your partner has claimed.
   const safeGifts = gifts.map((g) => (String(g.ownerId) === String(me) && g.kind === 'wish' ? { ...g, claimedBy: undefined, status: g.status === 'given' ? 'given' : 'open' } : g));
 
@@ -98,6 +104,8 @@ router.get('/export.json', async (req, res) => {
         myLittleThings: littleThings,
         gifts: safeGifts,
         myLocation,
+        myArcadeScores: arcadeScores,
+        myDailyWords: dailyWords,
         note: 'End-to-end encrypted messages are exported as ciphertext. They can only be read in the app with your passphrase.',
       },
       null,
