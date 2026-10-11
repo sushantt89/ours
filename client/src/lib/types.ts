@@ -481,3 +481,18 @@ export interface LocationState {
   partner: LocationView;
   canRequestAt: string | null;
 }
+
+export interface Match<V = any> {
+  id: string;
+  game: string;
+  name: string;
+  /** 0 if you started it, 1 if your partner did. */
+  seat: 0 | 1;
+  turn: 'me' | 'partner' | 'both' | null;
+  status: 'active' | 'done';
+  result: 'won' | 'lost' | 'draw' | 'none' | null;
+  view: V;
+  moves: number;
+  createdAt: string;
+  updatedAt: string;
+}

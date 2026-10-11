@@ -32,6 +32,7 @@ import games from './routes/games';
 import recap from './routes/recap';
 import location from './routes/location';
 import arcade from './routes/arcade';
+import matches from './routes/matches';
 import { iceServers } from './services/calls';
 
 export function createApp() {
@@ -134,6 +135,7 @@ export function createApp() {
   api.use('/recap', coupleOnly, recap);
   api.use('/location', coupleOnly, location);
   api.use('/arcade', coupleOnly, arcade);
+  api.use('/matches', coupleOnly, matches);
   api.get('/calls/ice', requireAuth, requireCouple, async (_req, res) => {
     res.json({ iceServers: await iceServers() });
   });

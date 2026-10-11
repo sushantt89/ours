@@ -77,8 +77,10 @@ export function connectSocket() {
 
   socket.on('notification', (n: AppNotification) => {
     void queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    // Chat and nudges have their own on-screen treatment.
-    if (n.type === 'message' ? !onChatScreen() : n.type !== 'nudge') {
+    // Chat and nudges have their own on-screen treatment, and a game you're
+    // already looking at updates in place.
+    const here = Boolean(n.url) && window.location.pathname === n.url;
+    if (!here && (n.type === 'message' ? !onChatScreen() : n.type !== 'nudge')) {
       toast.info(n.body ? `${n.title} — ${n.body}` : n.title, n.emoji, { label: 'View', onClick: () => window.dispatchEvent(new CustomEvent('ours:navigate', { detail: n.url })) });
     }
   });

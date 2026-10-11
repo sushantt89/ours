@@ -14,6 +14,7 @@ import { BackButton } from '@/components/layout/BackButton';
 import { GAMES_KEY, Player, TwoTruthsSheet } from './prompt/Player';
 import { ARCADE, formatScore } from './arcade/registry';
 import { arcadeQuery, leader } from './arcade/ArcadePage';
+import { HeadToHead } from './match/HeadToHead';
 
 /** "Both answer, then reveal" games. */
 const TOGETHER: { id: PromptGameId; emoji: string; name: string; hint: string; action?: string }[] = [
@@ -151,6 +152,8 @@ export default function Games() {
               </button>
             ))}
           </div>
+
+          <HeadToHead partnerName={partnerName} />
 
           <div className="mt-8">
             <SectionTitle>Arcade</SectionTitle>

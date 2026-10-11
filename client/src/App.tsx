@@ -46,6 +46,7 @@ const Watchlist = lazy(() => import('@/features/watch/Watchlist'));
 const Distance = lazy(() => import('@/features/distance/Distance'));
 const Games = lazy(() => import('@/features/games/Games'));
 const ArcadePage = lazy(() => import('@/features/games/arcade/ArcadePage'));
+const MatchPage = lazy(() => import('@/features/games/match/MatchPage'));
 const Recap = lazy(() => import('@/features/recap/Recap'));
 const MemoryMap = lazy(() => import('@/features/map/MemoryMap'));
 const Locate = lazy(() => import('@/features/locate/Locate'));
@@ -177,6 +178,7 @@ export default function App() {
                 <Route path="/distance" element={<Distance />} />
                 <Route path="/games" element={<Games />} />
                 <Route path="/games/arcade/:id" element={<ArcadePage />} />
+                <Route path="/games/match/:id" element={<MatchPage />} />
                 <Route path="/recap" element={<Recap />} />
                 <Route path="/map" element={<MemoryMap />} />
                 <Route path="/locate" element={<Locate />} />

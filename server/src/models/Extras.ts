@@ -175,3 +175,26 @@ const journalSchema = new Schema(
 );
 journalSchema.index({ coupleId: 1, date: -1 }, { unique: true });
 export const JournalDay = model('JournalDay', journalSchema);
+
+/* ── Turn-based matches (board and word games on both phones) ────────── */
+
+const matchSchema = new Schema(
+  {
+    coupleId: coupleRef,
+    game: { type: String, required: true, maxlength: 32 },
+    /** Seat 0 started the match, seat 1 is their partner. */
+    players: { type: [ObjectId], required: true },
+    /** The full game state, including anything hidden from one player. Only the server reads it. */
+    state: { type: Schema.Types.Mixed, required: true },
+    /** Whose move: 0, 1, or null when both can act or the game is over. */
+    turn: { type: Number, default: null },
+    status: { type: String, enum: ['active', 'done'], default: 'active' },
+    /** 0, 1, 'draw', or 'none' for games without a winner. */
+    winner: { type: Schema.Types.Mixed, default: null },
+    moves: { type: Number, default: 0 },
+  },
+  { timestamps: true, minimize: false },
+);
+matchSchema.index({ coupleId: 1, status: 1, updatedAt: -1 });
+export type MatchDoc = HydratedDocument<InferSchemaType<typeof matchSchema>>;
+export const Match = model('Match', matchSchema);
