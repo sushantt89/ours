@@ -25,6 +25,13 @@ export const ARCADE: ArcadeEntry[] = [
   { id: 'simon', name: 'Simon says', emoji: '🎵', hint: 'Repeat the growing pattern', component: lazy(() => import('./Simon')) },
   { id: 'reaction', name: 'Reaction time', emoji: '⚡', hint: 'Tap the moment it turns green', lowWins: true, unit: ' ms', component: lazy(() => import('./Reaction')) },
   { id: 'math', name: 'Math sprint', emoji: '➗', hint: 'Quick sums in 60s', component: lazy(() => import('./MathSprint')) },
+  { id: 'typing', name: 'Typing race', emoji: '⌨️', hint: 'Words per minute in 30s', unit: ' wpm', component: lazy(() => import('./Typing')) },
+  { id: 'breakout', name: 'Breakout', emoji: '🏓', hint: 'Bounce the ball, break bricks', component: lazy(() => import('./Breakout')) },
+  { id: 'slide', name: '15-puzzle', emoji: '🧩', hint: 'Slide tiles into order', lowWins: true, unit: ' moves', component: lazy(() => import('./Slide')) },
+  { id: 'whack', name: 'Whack-a-mole', emoji: '🔨', hint: 'Bop moles, dodge bombs', component: lazy(() => import('./Whack')) },
+  { id: 'stroop', name: 'Colour trap', emoji: '🎨', hint: 'Tap the ink, not the word', component: lazy(() => import('./Stroop')) },
+  { id: 'stack', name: 'Stack tower', emoji: '🏗️', hint: 'Drop blocks, build high', component: lazy(() => import('./Stack')) },
+  { id: 'sudoku', name: 'Sudoku', emoji: '9️⃣', hint: 'Fastest solve wins', lowWins: true, unit: 's', component: lazy(() => import('./Sudoku')) },
 ];
 
 export const formatScore = (entry: Pick<ArcadeEntry, 'unit'>, score: number) => `${score.toLocaleString()}${entry.unit ?? ''}`;

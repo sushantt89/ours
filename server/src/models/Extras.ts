@@ -97,6 +97,11 @@ export const PROMPT_GAMES = [
   'rate_it',
   'finish_sentence',
   'two_truths',
+  'deep_questions',
+  'dream_date',
+  'love_language',
+  'our_future',
+  'flags',
 ] as const;
 export type PromptGame = (typeof PROMPT_GAMES)[number];
 
@@ -193,7 +198,8 @@ const matchSchema = new Schema(
     winner: { type: Schema.Types.Mixed, default: null },
     moves: { type: Number, default: 0 },
   },
-  { timestamps: true, minimize: false },
+  // Both players can move at once in some games; a stale save fails instead of erasing a move.
+  { timestamps: true, minimize: false, optimisticConcurrency: true },
 );
 matchSchema.index({ coupleId: 1, status: 1, updatedAt: -1 });
 export type MatchDoc = HydratedDocument<InferSchemaType<typeof matchSchema>>;

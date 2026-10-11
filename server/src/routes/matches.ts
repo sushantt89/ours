@@ -1,4 +1,5 @@
 import { Router, type Request } from 'express';
+import mongoose from 'mongoose';
 import { z } from 'zod';
 import { Match, type MatchDoc } from '../models';
 import { TURN_GAMES, type Seat } from '../games';
@@ -85,25 +86,36 @@ router.post('/', async (req, res) => {
 
 router.post('/:id/move', async (req, res) => {
   const { move } = z.object({ move: z.unknown() }).parse(req.body);
-  const match = await owned(Match, req, 'That game');
-  const game = TURN_GAMES[match.game];
-  if (!game) throw notFound('That game');
-  if (match.status === 'done') throw badRequest('This game is over');
-  const seat = seatOf(match, req);
-  if (match.turn !== null && match.turn !== seat) throw badRequest("It's your partner's turn", 'not_your_turn');
+  // Load, apply and save; if your partner's move landed in between, start again from theirs.
+  let match: MatchDoc;
+  let game: (typeof TURN_GAMES)[string];
+  let seat: Seat;
+  for (let attempt = 0; ; attempt++) {
+    match = await owned(Match, req, 'That game');
+    game = TURN_GAMES[match.game];
+    if (!game) throw notFound('That game');
+    if (match.status === 'done') throw badRequest('This game is over');
+    seat = seatOf(match, req);
+    if (match.turn !== null && match.turn !== seat) throw badRequest("It's your partner's turn", 'not_your_turn');
 
-  const state = structuredClone(match.state);
-  const outcome = await game.move(state, seat, move);
-  match.state = state;
-  match.markModified('state');
-  match.moves += 1;
-  match.turn = outcome.turn;
-  if (outcome.winner !== undefined) {
-    match.status = 'done';
-    match.winner = outcome.winner;
-    match.turn = null;
+    const state = structuredClone(match.state);
+    const outcome = await game.move(state, seat, move);
+    match.state = state;
+    match.markModified('state');
+    match.moves += 1;
+    match.turn = outcome.turn;
+    if (outcome.winner !== undefined) {
+      match.status = 'done';
+      match.winner = outcome.winner;
+      match.turn = null;
+    }
+    try {
+      await match.save();
+      break;
+    } catch (err) {
+      if (!(err instanceof mongoose.Error.VersionError) || attempt >= 4) throw err;
+    }
   }
-  await match.save();
   sync(req.couple._id, 'matches');
   touchActivity(req.couple, req.user._id);
 

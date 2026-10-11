@@ -102,7 +102,7 @@ export function Player({ game, onClose }: { game: GameRound | null; onClose: () 
                 <h2 className="mb-5 mt-2 text-[26px] leading-snug">{prompt.text}</h2>
                 {isText ? (
                   <div>
-                    <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Your answer…" maxLength={500} rows={3} aria-label="Your answer" data-autofocus />
+                    <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Your answer…" maxLength={1000} rows={4} aria-label="Your answer" data-autofocus />
                     <Button block className="mt-3" onClick={write} disabled={!draft.trim()} loading={busy}>
                       {index + 1 === shown.prompts.length ? 'Send my answers' : 'Next'}
                     </Button>

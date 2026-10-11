@@ -22,6 +22,5 @@ const locationSchema = new Schema(
   },
   { timestamps: true },
 );
-locationSchema.index({ coupleId: 1 });
 
 export const Location = model('Location', locationSchema);

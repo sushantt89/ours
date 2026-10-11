@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { makeCouple } from './helpers';
-import { Notification } from '../src/models';
+import { Match, Notification } from '../src/models';
 import { FLEET } from '../src/games/tactics';
 
 type Person = Awaited<ReturnType<typeof makeCouple>>['one'];
@@ -171,6 +171,49 @@ describe('turn-based matches', () => {
     const done = (await move(one, m.id, { end: true })).body.match;
     expect(done.view.lines).toHaveLength(5);
     expect(done.status).toBe('done');
+  });
+
+  it('trivia duel: both answer the same questions at once, answers stay hidden, more correct wins', async () => {
+    const { one, two } = await makeCouple();
+    const m = await start(one, 'trivia');
+    expect(m.turn).toBe('both');
+    expect(m.view.current.options).toHaveLength(4);
+    expect(JSON.stringify(m.view.current)).not.toContain('answer');
+    const answers = ((await Match.findById(m.id).lean())!.state as { questions: { answer: number }[] }).questions.map((q) => q.answer);
+    // Both answer the first question at the same moment: neither answer may be lost.
+    await Promise.all([move(one, m.id, { start: true }), move(two, m.id, { start: true })]);
+    const [a, b] = await Promise.all([move(one, m.id, { pick: answers[0] }), move(two, m.id, { pick: (answers[0] + 1) % 4 })]);
+    expect([a.status, b.status]).toEqual([200, 200]);
+    const after = (await one.get(`/api/matches/${m.id}`)).body.match.view;
+    expect(after).toMatchObject({ index: 1, myScore: 1, theirProgress: 1, theirScore: 0, theirPicks: null });
+    for (let i = 1; i < 10; i++) {
+      await move(one, m.id, { pick: answers[i] });
+      await move(two, m.id, { pick: answers[i] });
+    }
+    const done = (await two.get(`/api/matches/${m.id}`)).body.match;
+    expect(done).toMatchObject({ status: 'done', result: 'lost' });
+    expect(done.view.theirPicks).toHaveLength(10);
+    expect((await move(one, m.id, { pick: 0 })).status).toBe(400);
+  });
+
+  it('word race: only real words from the letters count, and the higher score wins', async () => {
+    const { one, two } = await makeCouple();
+    const m = await start(one, 'wordrace');
+    const letters: string = m.view.letters;
+    expect(letters).toHaveLength(7);
+    expect((await move(one, m.id, { word: 'abc' })).status).toBe(400); // not started
+    await Promise.all([move(one, m.id, { start: true }), move(two, m.id, { start: true })]);
+    // The seed word itself always fits and is worth a bonus.
+    const seed = ((await Match.findById(m.id).lean())!.state as { letters: string }).letters;
+    const { SCRAMBLE_WORDS } = await import('../src/data/wordgames');
+    const full = SCRAMBLE_WORDS.find((w) => w.length === 7 && [...w].sort().join('') === [...seed].sort().join(''))!;
+    expect((await move(one, m.id, { word: full })).body.match.view.myPoints).toBe(10);
+    expect((await move(one, m.id, { word: full })).status).toBe(400); // repeat
+    expect((await move(one, m.id, { word: 'zzzzzzz' })).status).toBe(400); // wrong letters
+    expect((await move(two, m.id, { finish: true })).body.match.status).toBe('active');
+    const done = (await move(one, m.id, { finish: true })).body.match;
+    expect(done).toMatchObject({ status: 'done', result: 'won' });
+    expect(done.view.theirWords).toEqual([]);
   });
 
   it("keeps other couples' matches private", async () => {

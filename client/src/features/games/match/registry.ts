@@ -1,10 +1,15 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
 import type { Match } from '@/lib/types';
 
+/** `onError` replaces the usual error toast, for boards that show mistakes inline. */
+export interface SendOptions {
+  onError?: (message: string) => void;
+}
+
 export interface BoardProps<V = any> {
   match: Match<V>;
   /** Sends a move. Resolves to true when the server accepts it (errors are shown for you). */
-  send: (move: unknown) => Promise<boolean>;
+  send: (move: unknown, opts?: SendOptions) => Promise<boolean>;
   busy: boolean;
   partnerName: string;
 }
@@ -21,6 +26,8 @@ export interface MatchEntry {
 
 /** Ids match the server's TURN_GAMES. */
 export const MATCH_GAMES: MatchEntry[] = [
+  { id: 'trivia', name: 'Trivia duel', emoji: '🧠', hint: 'Same 10 questions, live', board: lazy(() => import('./boards/Trivia')) },
+  { id: 'wordrace', name: 'Word race', emoji: '🏁', hint: 'Same letters, 2 minutes', board: lazy(() => import('./boards/WordRace')) },
   { id: 'tictactoe', name: 'Tic-tac-toe', emoji: '⭕', hint: 'Three in a row', board: lazy(() => import('./boards/Grids').then((m) => ({ default: m.TicTacToe }))) },
   { id: 'connect4', name: 'Connect Four', emoji: '🔴', hint: 'Drop discs, line up four', board: lazy(() => import('./boards/Grids').then((m) => ({ default: m.ConnectFour }))) },
   { id: 'battleship', name: 'Battleship', emoji: '🚢', hint: 'Hide your fleet, sink theirs', board: lazy(() => import('./boards/Battleship')) },

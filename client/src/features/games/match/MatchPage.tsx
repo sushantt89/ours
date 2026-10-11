@@ -11,7 +11,7 @@ import { confirm, toast } from '@/store/ui';
 import { Avatar, Button, ErrorState, IconButton, Skeleton } from '@/components/ui';
 import { Page } from '@/components/layout/AppShell';
 import { BackButton } from '@/components/layout/BackButton';
-import { MATCH_GAMES } from './registry';
+import { MATCH_GAMES, type SendOptions } from './registry';
 import { useStartMatch } from './StartSheets';
 
 function statusLine(m: Match, partnerName: string) {
@@ -38,7 +38,7 @@ export default function MatchPage() {
   const { start, sheet } = useStartMatch();
 
   const send = useCallback(
-    async (move: unknown) => {
+    async (move: unknown, opts?: SendOptions) => {
       setBusy(true);
       try {
         const { match: updated } = await post<{ match: Match }>(`/matches/${id}/move`, { move });
@@ -47,7 +47,9 @@ export default function MatchPage() {
         navigator.vibrate?.(10);
         return true;
       } catch (err) {
-        toast.error(err instanceof ApiError ? err.message : errorMessage(err));
+        const message = err instanceof ApiError ? err.message : errorMessage(err);
+        if (opts?.onError) opts.onError(message);
+        else toast.error(message);
         void refetch();
         return false;
       } finally {

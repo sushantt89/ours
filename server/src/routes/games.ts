@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import { z } from 'zod';
 import { GameRound, DailyQuestion, PROMPT_GAMES, type GameDoc, type PromptGame } from '../models';
 import { THIS_OR_THAT, MOST_LIKELY } from '../data/games';
-import { FINISH_SENTENCE, HOT_TAKES, NEVER_HAVE_I_EVER, RATE_IT, RATE_SCALE, WOULD_YOU_RATHER } from '../data/packs';
+import { DEEP_QUESTIONS, DREAM_DATE, FINISH_SENTENCE, FLAGS, HOT_TAKES, LOVE_LANGUAGE, NEVER_HAVE_I_EVER, OUR_FUTURE, RATE_IT, RATE_SCALE, WOULD_YOU_RATHER } from '../data/packs';
 import { notify } from '../services/notify';
 import { sync } from '../services/realtime';
 import { touchActivity } from '../services/streak';
@@ -32,6 +32,11 @@ const DEFS: Record<PromptGame, { name: string; kind: Kind }> = {
   rate_it: { name: 'Rate it', kind: 'close' },
   finish_sentence: { name: 'Finish the sentence', kind: 'text' },
   two_truths: { name: 'Two truths and a lie', kind: 'quiz' },
+  deep_questions: { name: 'Deep questions', kind: 'text' },
+  dream_date: { name: 'Dream date', kind: 'match' },
+  love_language: { name: 'Love languages', kind: 'match' },
+  our_future: { name: 'Plan our future', kind: 'match' },
+  flags: { name: 'Green flag, red flag', kind: 'match' },
 };
 const NAMES = Object.fromEntries(Object.entries(DEFS).map(([k, v]) => [k, v.name])) as Record<PromptGame, string>;
 const kindOf = (game: GameDoc) => DEFS[game.game as PromptGame].kind;
@@ -141,6 +146,16 @@ router.post('/', async (req, res) => {
     prompts = shuffle(RATE_IT).slice(0, 8).map((text) => ({ text, options: RATE_SCALE }));
   } else if (game === 'finish_sentence') {
     prompts = shuffle(FINISH_SENTENCE).slice(0, 5).map((text) => ({ text, options: [] }));
+  } else if (game === 'deep_questions') {
+    prompts = shuffle(DEEP_QUESTIONS).slice(0, 3).map((text) => ({ text, options: [] }));
+  } else if (game === 'dream_date') {
+    prompts = shuffle(DREAM_DATE).slice(0, 8).map(([text, options]) => ({ text, options }));
+  } else if (game === 'love_language') {
+    prompts = shuffle(LOVE_LANGUAGE).slice(0, ROUND_SIZE).map(([a, b]) => ({ text: 'Which would mean more to you?', options: shuffle([a, b]) }));
+  } else if (game === 'our_future') {
+    prompts = shuffle(OUR_FUTURE).slice(0, ROUND_SIZE).map(([text, options]) => ({ text, options }));
+  } else if (game === 'flags') {
+    prompts = shuffle(FLAGS).slice(0, ROUND_SIZE).map((text) => ({ text, options: ['💚 Green flag', '🚩 Red flag'] }));
   } else if (game === 'two_truths') {
     if (!body.statements || body.lie === undefined) throw badRequest('Write two truths and a lie, and mark which is the lie');
     prompts = [{ text: 'Which one is the lie?', options: body.statements, correct: body.lie }];
@@ -190,7 +205,7 @@ router.post('/', async (req, res) => {
 
 router.post('/:id/answer', async (req, res) => {
   const body = z
-    .object({ picks: z.array(z.number().int().min(0).max(4)).max(20).default([]), texts: z.array(z.string().trim().min(1).max(500)).max(20).optional() })
+    .object({ picks: z.array(z.number().int().min(0).max(4)).max(20).default([]), texts: z.array(z.string().trim().min(1).max(1000)).max(20).optional() })
     .parse(req.body);
   const round = await owned(GameRound, req, 'That game');
   const textGame = kindOf(round) === 'text';

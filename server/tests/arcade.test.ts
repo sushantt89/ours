@@ -82,6 +82,25 @@ describe('more couple games', () => {
     expect(done).toMatchObject({ status: 'done', score: 7 });
   });
 
+  it.each(['dream_date', 'love_language', 'our_future', 'flags'])('plays %s with identical picks as a full match', async (id) => {
+    const { one, two } = await makeCouple();
+    const game = (await one.post('/api/games', { game: id })).body.game;
+    expect(game.prompts.length).toBeGreaterThanOrEqual(8);
+    const picks = game.prompts.map((p: { options: string[] }) => p.options.length - 1);
+    await one.post(`/api/games/${game.id}/answer`, { picks });
+    const done = (await two.post(`/api/games/${game.id}/answer`, { picks })).body.game;
+    expect(done).toMatchObject({ status: 'done', score: game.prompts.length });
+  });
+
+  it('deep questions take long written answers', async () => {
+    const { one, two } = await makeCouple();
+    const game = (await one.post('/api/games', { game: 'deep_questions' })).body.game;
+    expect(game.prompts).toHaveLength(3);
+    const texts = game.prompts.map(() => 'x'.repeat(900));
+    expect((await one.post(`/api/games/${game.id}/answer`, { texts })).status).toBe(200);
+    expect((await two.post(`/api/games/${game.id}/answer`, { texts })).body.game.status).toBe('done');
+  });
+
   it('counts ratings within one point as a match', async () => {
     const { one, two } = await makeCouple();
     const game = (await one.post('/api/games', { game: 'rate_it' })).body.game;

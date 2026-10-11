@@ -428,7 +428,12 @@ export type PromptGameId =
   | 'hot_takes'
   | 'rate_it'
   | 'finish_sentence'
-  | 'two_truths';
+  | 'two_truths'
+  | 'deep_questions'
+  | 'dream_date'
+  | 'love_language'
+  | 'our_future'
+  | 'flags';
 
 export interface GameRound {
   id: string;
