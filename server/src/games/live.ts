@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { TRIVIA } from '../data/trivia';
-import { SCRAMBLE_WORDS } from '../data/wordgames';
+import { COMMON_WORDS, RACE_LETTERS } from '../data/wordrace';
 import { isWord } from '../services/words';
 import { invalid, isInt, other, type Seat, type TurnGame } from './types';
 
@@ -93,7 +93,12 @@ interface RaceState {
   words: [string[], string[]];
   startedAt: [number | null, number | null];
   finished: [boolean, boolean];
+  /** Everyday words these letters make (the dictionary accepts many more). Older matches don't have it. */
+  possible?: string[];
 }
+
+let raceSeeds: string[] | null = null;
+let common: string[] | null = null;
 
 const wordPoints = (w: string) => (w.length <= 3 ? 1 : w.length - 2) + (w.length === LETTERS ? 5 : 0);
 const points = (words: string[]) => words.reduce((t, w) => t + wordPoints(w), 0);
@@ -119,8 +124,11 @@ export const wordrace: TurnGame<RaceState> = {
   name: 'Word race',
   firstTurn: null,
   init: () => {
-    const seeds = SCRAMBLE_WORDS.filter((w) => w.length === LETTERS);
-    return { letters: shuffled([...seeds[crypto.randomInt(seeds.length)]]).join(''), words: [[], []], startedAt: [null, null], finished: [false, false] };
+    raceSeeds ??= RACE_LETTERS.split(' ');
+    common ??= COMMON_WORDS.split(' ');
+    const letters = shuffled([...raceSeeds[crypto.randomInt(raceSeeds.length)]]).join('');
+    const possible = common.filter((w) => fromLetters(w, letters)).sort((a, b) => b.length - a.length || a.localeCompare(b));
+    return { letters, words: [[], []], startedAt: [null, null], finished: [false, false], possible };
   },
   async move(s, seat, m: { start?: true; word?: string; finish?: true }) {
     if (s.finished[seat]) throw invalid("You're done. Waiting for your partner");
@@ -156,6 +164,9 @@ export const wordrace: TurnGame<RaceState> = {
       theirPoints: points(theirs),
       theirFinished: s.finished[other(seat)] || timeUp(s, other(seat)),
       theirWords: done ? theirs : null,
+      possibleCount: s.possible?.length ?? null,
+      // At the end: the best everyday words neither of you found.
+      missed: done && s.possible ? s.possible.filter((w) => !s.words[0].includes(w) && !s.words[1].includes(w)).slice(0, 24) : null,
     };
   },
 };

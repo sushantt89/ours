@@ -15,6 +15,8 @@ interface RaceView {
   theirPoints: number;
   theirFinished: boolean;
   theirWords: string[] | null;
+  possibleCount: number | null;
+  missed: string[] | null;
 }
 
 const wordPoints = (w: string, n: number) => (w.length <= 3 ? 1 : w.length - 2) + (w.length === n ? 5 : 0);
@@ -109,6 +111,11 @@ export default function WordRace({ match, send, busy, partnerName }: BoardProps<
           <form onSubmit={submit} className="mb-3 flex h-14 items-center justify-center rounded-2xl bg-surface text-3xl font-semibold uppercase tracking-[0.2em] shadow-card">
             {word || <span className="text-base font-normal normal-case tracking-normal text-faint">tap letters</span>}
           </form>
+          {v.possibleCount !== null && (
+            <p className="-mt-1 mb-1 text-center text-xs text-muted">
+              Found {v.mine.length} of {v.possibleCount}+ everyday words
+            </p>
+          )}
           <p className={cn('-mt-1 mb-2 h-5 text-center text-sm font-medium', note?.good ? 'text-success' : 'text-danger')}>{note?.text}</p>
           <div className="mb-3 flex justify-center gap-1.5">
             {order.map((i) => (
@@ -145,12 +152,24 @@ export default function WordRace({ match, send, busy, partnerName }: BoardProps<
           </span>
         ))}
       </div>
-      {v.theirWords && (
+      {v.theirWords && v.theirWords.length > 0 && (
         <div className="mt-4">
           <p className="mb-1.5 text-sm font-semibold text-muted">{partnerName}'s words</p>
           <div className="flex flex-wrap gap-1.5">
             {v.theirWords.map((w) => (
               <span key={w} className="rounded-full bg-indigo-500/15 px-2.5 py-1 text-sm font-medium">
+                {w}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {v.missed && v.missed.length > 0 && (
+        <div className="mt-4">
+          <p className="mb-1.5 text-sm font-semibold text-muted">Words you both missed</p>
+          <div className="flex flex-wrap gap-1.5">
+            {v.missed.map((w) => (
+              <span key={w} className="rounded-full border border-dashed border-line px-2.5 py-1 text-sm text-muted">
                 {w}
               </span>
             ))}

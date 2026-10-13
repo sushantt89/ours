@@ -205,8 +205,10 @@ describe('turn-based matches', () => {
     await Promise.all([move(one, m.id, { start: true }), move(two, m.id, { start: true })]);
     // The seed word itself always fits and is worth a bonus.
     const seed = ((await Match.findById(m.id).lean())!.state as { letters: string }).letters;
-    const { SCRAMBLE_WORDS } = await import('../src/data/wordgames');
-    const full = SCRAMBLE_WORDS.find((w) => w.length === 7 && [...w].sort().join('') === [...seed].sort().join(''))!;
+    const { RACE_LETTERS } = await import('../src/data/wordrace');
+    expect(RACE_LETTERS.split(' ').length).toBeGreaterThan(7000);
+    expect(m.view.possibleCount).toBeGreaterThanOrEqual(12);
+    const full = RACE_LETTERS.split(' ').find((w) => w.length === 7 && [...w].sort().join('') === [...seed].sort().join(''))!;
     expect((await move(one, m.id, { word: full })).body.match.view.myPoints).toBe(10);
     expect((await move(one, m.id, { word: full })).status).toBe(400); // repeat
     expect((await move(one, m.id, { word: 'zzzzzzz' })).status).toBe(400); // wrong letters
@@ -214,6 +216,8 @@ describe('turn-based matches', () => {
     const done = (await move(one, m.id, { finish: true })).body.match;
     expect(done).toMatchObject({ status: 'done', result: 'won' });
     expect(done.view.theirWords).toEqual([]);
+    expect(done.view.missed.length).toBeGreaterThan(0);
+    expect(done.view.missed).not.toContain(full);
   });
 
   it("keeps other couples' matches private", async () => {

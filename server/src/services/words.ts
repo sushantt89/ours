@@ -2,11 +2,14 @@ import crypto from 'node:crypto';
 
 let dictionary: Set<string> | null = null;
 
+/** Everyday words newer than the word list. */
+const MODERN_WORDS = 'emoji emojis selfie selfies wifi bestie besties vlog vlogs vlogger blogger hashtag hashtags podcast podcasts texting texted unfriend meme memes vibe vibes binge binged online inbox inboxes login logins logout signup ebook ebooks app apps emailed emailing laptop laptops webcam webcams'.split(' ');
+
 /** True for English words of 3–8 letters (the word games' dictionary). Loaded on first use. */
 export async function isWord(word: string) {
   if (!dictionary) {
     const { DICTIONARY_WORDS } = await import('../data/dictionary');
-    dictionary = new Set(DICTIONARY_WORDS.split(' '));
+    dictionary = new Set([...DICTIONARY_WORDS.split(' '), ...MODERN_WORDS]);
   }
   return dictionary.has(word.toLowerCase());
 }
